@@ -1,5 +1,5 @@
-import { type JSX, type ReactNode, useMemo, useState } from "react";
-import { Activity, ExternalLink, Moon, RefreshCw, Sun } from "lucide-react";
+import { type CSSProperties, type JSX, type ReactNode, useMemo, useState } from "react";
+import { Check, Copy, ExternalLink, Moon, RefreshCw, Sun } from "lucide-react";
 
 import { RadialChart } from "../src";
 import type { RadialDatum, RingPattern } from "../src";
@@ -16,12 +16,17 @@ interface Metric {
 
 interface ThemeTokens {
 	readonly page: string;
-	readonly card: string;
 	readonly muted: string;
+	readonly faint: string;
+	readonly frame: string;
+	readonly surface: string;
 	readonly input: string;
 	readonly chip: string;
 	readonly chipActive: string;
-	readonly divider: string;
+	readonly dots: string;
+	readonly codeBg: string;
+	readonly codeText: string;
+	readonly track: string;
 }
 
 const INITIAL_METRICS: Metric[] = [
@@ -36,24 +41,36 @@ const LAYOUT_PRESETS = [
 	{ label: "Semi", maxSweepDegrees: 180, startAngle: 180 },
 ];
 
+const META_TAGS = ["React 19", "TypeScript", "Zero deps", "Pure SVG", "MIT"];
+
 const THEMES: Record<ThemeMode, ThemeTokens> = {
 	dark: {
-		page: "bg-slate-950 text-slate-100",
-		card: "border-slate-800 bg-slate-900/60",
-		muted: "text-slate-400",
-		input: "border-slate-700 bg-slate-800 text-slate-100",
-		chip: "border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700",
-		chipActive: "border-cyan-500 bg-cyan-500/15 text-cyan-300",
-		divider: "border-slate-800",
+		page: "bg-[#0b0b0f] text-stone-100",
+		muted: "text-stone-400",
+		faint: "text-stone-500",
+		frame: "border-white/12",
+		surface: "bg-white/[0.02]",
+		input: "border-white/12 bg-white/[0.03] text-stone-100",
+		chip: "border-white/12 text-stone-300 hover:border-white/40 hover:text-white",
+		chipActive: "border-brand bg-brand/10 text-brand",
+		dots: "text-white/[0.05]",
+		codeBg: "bg-black/40",
+		codeText: "text-stone-300",
+		track: "rgba(245, 245, 244, 0.14)",
 	},
 	light: {
-		page: "bg-slate-50 text-slate-900",
-		card: "border-slate-200 bg-white",
-		muted: "text-slate-500",
-		input: "border-slate-300 bg-white text-slate-900",
-		chip: "border-slate-300 bg-white text-slate-600 hover:bg-slate-100",
-		chipActive: "border-cyan-500 bg-cyan-500/10 text-cyan-700",
-		divider: "border-slate-200",
+		page: "bg-[#f4f3ee] text-stone-900",
+		muted: "text-stone-600",
+		faint: "text-stone-500",
+		frame: "border-stone-300",
+		surface: "bg-white",
+		input: "border-stone-300 bg-white text-stone-900",
+		chip: "border-stone-300 text-stone-600 hover:border-stone-900 hover:text-stone-900",
+		chipActive: "border-brand bg-brand/10 text-brand",
+		dots: "text-black/[0.06]",
+		codeBg: "bg-stone-900",
+		codeText: "text-stone-300",
+		track: "rgba(24, 24, 27, 0.16)",
 	},
 };
 
@@ -67,6 +84,81 @@ function withAlpha(hexColor: string, alpha: number): string {
 
 function randomValue(max: number): number {
 	return Math.round(Math.random() * max);
+}
+
+function useCopy(): readonly [boolean, (text: string) => void] {
+	const [copied, setCopied] = useState(false);
+	const copy = (text: string): void => {
+		navigator.clipboard
+			.writeText(text)
+			.then(() => {
+				setCopied(true);
+				window.setTimeout(() => setCopied(false), 1500);
+			})
+			.catch(() => {
+				/* Clipboard API unavailable (e.g. insecure context) - ignore. */
+			});
+	};
+	return [copied, copy] as const;
+}
+
+interface SnippetConfig {
+	metrics: readonly Metric[];
+	size: number;
+	gap: number;
+	autoRingWidth: boolean;
+	ringWidth: number;
+	startAngle: number;
+	maxSweepDegrees: number;
+	rounded: boolean;
+	clockwise: boolean;
+	animate: boolean;
+	animationDurationMs: number;
+	showLegend: boolean;
+	showTooltip: boolean;
+}
+
+function buildSnippet(config: SnippetConfig): string {
+	const dataLines = config.metrics
+		.map((metric) => {
+			const fields = [
+				`label: ${JSON.stringify(metric.label)}`,
+				`value: ${metric.value}`,
+				`max: ${metric.max}`,
+				`color: ${JSON.stringify(metric.color)}`,
+			];
+			if (metric.pattern === "dashed") {
+				fields.push(`pattern: "dashed"`);
+			}
+			return `  { ${fields.join(", ")} },`;
+		})
+		.join("\n");
+
+	const props = [
+		`  data={data}`,
+		`  size={${config.size}}`,
+		`  gap={${config.gap}}`,
+		config.autoRingWidth ? null : `  ringWidth={${config.ringWidth}}`,
+		`  startAngle={${config.startAngle}}`,
+		`  maxSweepDegrees={${config.maxSweepDegrees}}`,
+		`  rounded={${config.rounded}}`,
+		`  clockwise={${config.clockwise}}`,
+		`  animate={${config.animate}}`,
+		`  animationDurationMs={${config.animationDurationMs}}`,
+		`  showLegend={${config.showLegend}}`,
+		`  showTooltip={${config.showTooltip}}`,
+	].filter((line): line is string => line !== null);
+
+	return `import { RadialChart } from "multi-layer-radial-chart";
+import "multi-layer-radial-chart/styles.css";
+
+const data = [
+${dataLines}
+];
+
+<RadialChart
+${props.join("\n")}
+/>`;
 }
 
 export function App(): JSX.Element {
@@ -90,6 +182,40 @@ export function App(): JSX.Element {
 
 	const tokens = THEMES[theme];
 	const isFullCircle = maxSweepDegrees === 360;
+
+	const snippet = useMemo(
+		() =>
+			buildSnippet({
+				metrics,
+				size,
+				gap,
+				autoRingWidth,
+				ringWidth,
+				startAngle,
+				maxSweepDegrees,
+				rounded,
+				clockwise,
+				animate,
+				animationDurationMs,
+				showLegend,
+				showTooltip,
+			}),
+		[
+			metrics,
+			size,
+			gap,
+			autoRingWidth,
+			ringWidth,
+			startAngle,
+			maxSweepDegrees,
+			rounded,
+			clockwise,
+			animate,
+			animationDurationMs,
+			showLegend,
+			showTooltip,
+		],
+	);
 
 	const data = useMemo<RadialDatum[]>(
 		() =>
@@ -115,6 +241,12 @@ export function App(): JSX.Element {
 		);
 	};
 
+	const setColor = (index: number, color: string): void => {
+		setMetrics((current) =>
+			current.map((metric, position) => (position === index ? { ...metric, color } : metric)),
+		);
+	};
+
 	const togglePattern = (index: number): void => {
 		setMetrics((current) =>
 			current.map((metric, position) =>
@@ -134,74 +266,119 @@ export function App(): JSX.Element {
 		setStartAngle(preset.startAngle);
 	};
 
+	const pageStyle = {
+		colorScheme: theme,
+		"--slider-track": tokens.track,
+	} as CSSProperties;
+
 	return (
 		<div
-			className={`min-h-screen transition-colors duration-300 ${tokens.page}`}
-			style={{ colorScheme: theme }}
+			className={`min-h-screen transition-colors duration-300 motion-reduce:transition-none ${tokens.page}`}
+			style={pageStyle}
 		>
-			<div className="mx-auto max-w-5xl px-6 py-12">
-				<header className="mb-10 flex flex-col gap-3">
-					<div className="flex items-center justify-between gap-4">
-						<div className="flex items-center gap-2 text-sm font-medium text-cyan-500">
-							<Activity className="h-5 w-5" aria-hidden="true" />
-							<span>multi-layer-radial-chart</span>
+			<div className="mx-auto max-w-5xl px-6 py-10 sm:py-16">
+				<header className="mb-12">
+					<div className="mb-10 flex items-center justify-between gap-4">
+						<div className="flex items-center gap-2.5">
+							<span className="h-3.5 w-3.5 bg-brand" aria-hidden="true" />
+							<span
+								className={`font-mono text-[11px] uppercase tracking-[0.18em] ${tokens.muted}`}
+							>
+								multi-layer-radial-chart
+							</span>
 						</div>
 						<ThemeToggle theme={theme} tokens={tokens} onChange={setTheme} />
 					</div>
-					<h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-						Animated activity rings for React
+
+					<h1 className="max-w-3xl text-5xl font-semibold leading-[0.98] tracking-[-0.04em] sm:text-6xl lg:text-7xl">
+						Radial charts,
+						<br />
+						<span className="text-brand">engineered</span> in pure SVG.
 					</h1>
-					<p className={`max-w-2xl ${tokens.muted}`}>
+
+					<p className={`mt-6 max-w-xl text-base leading-relaxed ${tokens.muted}`}>
 						A lightweight, dependency-free React 19 + TypeScript library rendering concentric
-						progress rings with pure SVG. Every control below maps directly to a component prop.
+						progress rings. Every control below maps directly to a component prop.
 					</p>
-					<a
-						className={`inline-flex w-fit items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors duration-200 ${tokens.chip}`}
-						href="https://github.com/MosheHatab/multi-layer-radial-chart"
-						target="_blank"
-						rel="noreferrer"
+
+					<div
+						className={`mt-6 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] uppercase tracking-widest ${tokens.faint}`}
 					>
-						<ExternalLink className="h-4 w-4" aria-hidden="true" />
-						View on GitHub
-					</a>
+						{META_TAGS.map((tag, index) => (
+							<span key={tag} className="flex items-center gap-3">
+								{index > 0 ? <span aria-hidden="true">/</span> : null}
+								{tag}
+							</span>
+						))}
+					</div>
+
+					<div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+						<InstallCommand tokens={tokens} />
+						<a
+							className={`inline-flex w-fit items-center gap-2 border px-4 py-2.5 font-mono text-xs uppercase tracking-wider transition-colors duration-200 ${tokens.chip}`}
+							href="https://github.com/MosheHatab/multi-layer-radial-chart"
+							target="_blank"
+							rel="noreferrer"
+						>
+							<ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+							GitHub
+						</a>
+					</div>
 				</header>
 
-				<main className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-					<section
-						className={`flex items-center justify-center rounded-2xl border p-8 ${tokens.card}`}
-					>
-						<RadialChart
-							data={data}
-							size={size}
-							gap={gap}
-							ringWidth={autoRingWidth ? undefined : ringWidth}
-							startAngle={startAngle}
-							maxSweepDegrees={maxSweepDegrees}
-							rounded={rounded}
-							clockwise={clockwise}
-							animate={animate}
-							animationDurationMs={animationDurationMs}
-							showLegend={showLegend}
-							showTooltip={showTooltip}
+				<main className={`grid border ${tokens.frame} lg:grid-cols-[minmax(0,1fr)_360px]`}>
+					<section className="relative flex min-h-[24rem] items-center justify-center overflow-hidden p-8">
+						<div
+							aria-hidden="true"
+							className={`pointer-events-none absolute inset-0 ${tokens.dots}`}
+							style={{
+								backgroundImage: "radial-gradient(currentColor 1px, transparent 1px)",
+								backgroundSize: "18px 18px",
+							}}
+						/>
+						<span
+							className={`absolute left-4 top-4 font-mono text-[10px] uppercase tracking-[0.2em] ${tokens.faint}`}
 						>
-							{isFullCircle ? (
-								<div className="flex flex-col items-center">
-									<span className="text-4xl font-bold">{totalPercent}%</span>
-									<span className={`text-xs uppercase tracking-wide ${tokens.muted}`}>
-										Average
-									</span>
-								</div>
-							) : null}
-						</RadialChart>
+							Live preview
+						</span>
+						<div className="relative">
+							<RadialChart
+								data={data}
+								size={size}
+								gap={gap}
+								ringWidth={autoRingWidth ? undefined : ringWidth}
+								startAngle={startAngle}
+								maxSweepDegrees={maxSweepDegrees}
+								rounded={rounded}
+								clockwise={clockwise}
+								animate={animate}
+								animationDurationMs={animationDurationMs}
+								showLegend={showLegend}
+								showTooltip={showTooltip}
+							>
+								{isFullCircle ? (
+									<div className="flex flex-col items-center">
+										<span className="font-mono text-4xl font-semibold tabular-nums">
+											{totalPercent}%
+										</span>
+										<span
+											className={`font-mono text-[10px] uppercase tracking-[0.2em] ${tokens.faint}`}
+										>
+											Average
+										</span>
+									</div>
+								) : null}
+							</RadialChart>
+						</div>
 					</section>
 
-					<aside className={`flex flex-col gap-5 rounded-2xl border p-6 ${tokens.card}`}>
-						<Section title="Data" tokens={tokens} muted={tokens.muted}>
+					<aside className={`border-t lg:border-l lg:border-t-0 ${tokens.frame}`}>
+						<Section index="01" title="Data" tokens={tokens} withDivider={false}>
 							<div className="mb-1 flex justify-end">
 								<button
 									type="button"
 									onClick={shuffle}
-									className="inline-flex cursor-pointer items-center gap-1.5 rounded-md bg-cyan-500 px-2.5 py-1.5 text-xs font-semibold text-slate-950 transition-colors duration-200 hover:bg-cyan-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300"
+									className="inline-flex cursor-pointer items-center gap-1.5 bg-brand px-2.5 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-wider text-white transition-opacity duration-200 hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
 								>
 									<RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
 									Randomize
@@ -212,21 +389,28 @@ export function App(): JSX.Element {
 									<div className="flex items-center justify-between text-sm">
 										<span className="flex items-center gap-2">
 											<span
-												className="h-3 w-3 rounded-full"
-												style={{ backgroundColor: metric.color }}
-												aria-hidden="true"
-											/>
+												className={`inline-flex h-5 w-5 items-center justify-center border ${tokens.frame}`}
+											>
+												<input
+													type="color"
+													value={metric.color}
+													onChange={(event) => setColor(index, event.target.value)}
+													className="swatch h-full w-full"
+													aria-label={`${metric.label} color`}
+													title="Ring color"
+												/>
+											</span>
 											{metric.label}
 										</span>
 										<span className="flex items-center gap-2">
-											<span className={`tabular-nums ${tokens.muted}`}>
+											<span className={`font-mono tabular-nums ${tokens.muted}`}>
 												{metric.value}/{metric.max}
 											</span>
 											<button
 												type="button"
 												onClick={() => togglePattern(index)}
 												aria-pressed={metric.pattern === "dashed"}
-												className={`cursor-pointer rounded border px-1.5 py-0.5 text-[11px] transition-colors duration-200 ${
+												className={`cursor-pointer border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider transition-colors duration-200 ${
 													metric.pattern === "dashed" ? tokens.chipActive : tokens.chip
 												}`}
 											>
@@ -240,16 +424,14 @@ export function App(): JSX.Element {
 										max={metric.max}
 										value={metric.value}
 										onChange={(event) => setValue(index, Number(event.target.value))}
-										className="cursor-pointer accent-cyan-500"
+										className="slider"
 										aria-label={`${metric.label} value`}
 									/>
 								</div>
 							))}
 						</Section>
 
-						<Divider className={tokens.divider} />
-
-						<Section title="Layout" tokens={tokens} muted={tokens.muted}>
+						<Section index="02" title="Layout" tokens={tokens}>
 							<div className="flex gap-2">
 								{LAYOUT_PRESETS.map((preset) => {
 									const active = preset.maxSweepDegrees === maxSweepDegrees;
@@ -259,7 +441,7 @@ export function App(): JSX.Element {
 											key={preset.label}
 											onClick={() => applyPreset(preset)}
 											aria-pressed={active}
-											className={`flex-1 cursor-pointer rounded-md border px-2 py-1.5 text-xs font-medium transition-colors duration-200 ${
+											className={`flex-1 cursor-pointer border px-2 py-1.5 font-mono text-[11px] uppercase tracking-wider transition-colors duration-200 ${
 												active ? tokens.chipActive : tokens.chip
 											}`}
 										>
@@ -320,9 +502,7 @@ export function App(): JSX.Element {
 							/>
 						</Section>
 
-						<Divider className={tokens.divider} />
-
-						<Section title="Behavior" tokens={tokens} muted={tokens.muted}>
+						<Section index="03" title="Behavior" tokens={tokens}>
 							<Toggle label="Rounded caps" checked={rounded} onChange={setRounded} />
 							<Toggle label="Clockwise" checked={clockwise} onChange={setClockwise} />
 							<Toggle label="Animate" checked={animate} onChange={setAnimate} />
@@ -338,15 +518,83 @@ export function App(): JSX.Element {
 							/>
 						</Section>
 
-						<Divider className={tokens.divider} />
-
-						<Section title="Display" tokens={tokens} muted={tokens.muted}>
+						<Section index="04" title="Display" tokens={tokens}>
 							<Toggle label="Show legend" checked={showLegend} onChange={setShowLegend} />
 							<Toggle label="Show tooltip" checked={showTooltip} onChange={setShowTooltip} />
 						</Section>
 					</aside>
 				</main>
+
+				<CodePanel code={snippet} tokens={tokens} />
 			</div>
+		</div>
+	);
+}
+
+interface InstallCommandProps {
+	readonly tokens: ThemeTokens;
+}
+
+function InstallCommand(props: InstallCommandProps): JSX.Element {
+	const { tokens } = props;
+	const [copied, copy] = useCopy();
+	const command = "npm i multi-layer-radial-chart";
+	return (
+		<div
+			className={`flex items-center gap-3 border px-4 py-2.5 font-mono text-sm ${tokens.frame} ${tokens.surface}`}
+		>
+			<span className="text-brand" aria-hidden="true">
+				$
+			</span>
+			<code className="flex-1">{command}</code>
+			<button
+				type="button"
+				onClick={() => copy(command)}
+				aria-label="Copy install command"
+				className={`cursor-pointer transition-colors duration-200 ${copied ? "text-brand" : `${tokens.faint} hover:text-brand`}`}
+			>
+				{copied ? (
+					<Check className="h-4 w-4" aria-hidden="true" />
+				) : (
+					<Copy className="h-4 w-4" aria-hidden="true" />
+				)}
+			</button>
+		</div>
+	);
+}
+
+interface CodePanelProps {
+	readonly code: string;
+	readonly tokens: ThemeTokens;
+}
+
+function CodePanel(props: CodePanelProps): JSX.Element {
+	const { code, tokens } = props;
+	const [copied, copy] = useCopy();
+	return (
+		<div className={`mt-6 border ${tokens.frame}`}>
+			<div className={`flex items-center justify-between border-b px-4 py-2.5 ${tokens.frame}`}>
+				<span
+					className={`font-mono text-[11px] uppercase tracking-[0.18em] ${tokens.faint}`}
+				>
+					App.tsx
+				</span>
+				<button
+					type="button"
+					onClick={() => copy(code)}
+					className={`inline-flex cursor-pointer items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider transition-colors duration-200 ${copied ? "text-brand" : `${tokens.muted} hover:text-brand`}`}
+				>
+					{copied ? (
+						<Check className="h-3.5 w-3.5" aria-hidden="true" />
+					) : (
+						<Copy className="h-3.5 w-3.5" aria-hidden="true" />
+					)}
+					{copied ? "Copied" : "Copy"}
+				</button>
+			</div>
+			<pre className={`overflow-x-auto p-4 font-mono text-[12px] leading-relaxed ${tokens.codeBg} ${tokens.codeText}`}>
+				<code>{code}</code>
+			</pre>
 		</div>
 	);
 }
@@ -364,7 +612,7 @@ function ThemeToggle(props: ThemeToggleProps): JSX.Element {
 		{ value: "dark", icon: <Moon className="h-4 w-4" aria-hidden="true" />, label: "Dark" },
 	];
 	return (
-		<div className={`flex items-center gap-1 rounded-lg border p-1 ${tokens.card}`} role="group">
+		<div className={`flex items-center border ${tokens.frame}`} role="group">
 			{options.map((option) => {
 				const active = option.value === theme;
 				return (
@@ -374,8 +622,8 @@ function ThemeToggle(props: ThemeToggleProps): JSX.Element {
 						onClick={() => onChange(option.value)}
 						aria-pressed={active}
 						title={option.label}
-						className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors duration-200 ${
-							active ? "bg-cyan-500 text-slate-950" : `${tokens.muted} hover:text-cyan-500`
+						className={`inline-flex cursor-pointer items-center gap-1.5 px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand ${
+							active ? "bg-brand text-white" : `${tokens.muted} hover:text-brand`
 						}`}
 					>
 						{option.icon}
@@ -388,28 +636,25 @@ function ThemeToggle(props: ThemeToggleProps): JSX.Element {
 }
 
 interface SectionProps {
+	readonly index: string;
 	readonly title: string;
 	readonly tokens: ThemeTokens;
-	readonly muted: string;
+	readonly withDivider?: boolean;
 	readonly children: ReactNode;
 }
 
 function Section(props: SectionProps): JSX.Element {
-	const { title, muted, children } = props;
+	const { index, title, tokens, withDivider = true, children } = props;
 	return (
-		<div className="flex flex-col gap-3">
-			<h3 className={`text-xs font-semibold uppercase tracking-wide ${muted}`}>{title}</h3>
+		<div className={`flex flex-col gap-3 p-6 ${withDivider ? `border-t ${tokens.frame}` : ""}`}>
+			<h3 className="flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.18em]">
+				<span className="text-brand">{index}</span>
+				<span className={tokens.faint}>/</span>
+				<span>{title}</span>
+			</h3>
 			{children}
 		</div>
 	);
-}
-
-interface DividerProps {
-	readonly className: string;
-}
-
-function Divider(props: DividerProps): JSX.Element {
-	return <hr className={`border-t ${props.className}`} />;
 }
 
 interface RangeControlProps {
@@ -429,7 +674,7 @@ function RangeControl(props: RangeControlProps): JSX.Element {
 		<label className={`flex flex-col gap-1.5 text-sm ${disabled ? "opacity-40" : ""}`}>
 			<span className="flex items-center justify-between">
 				{label}
-				<span className="tabular-nums opacity-70">
+				<span className="font-mono tabular-nums opacity-70">
 					{value}
 					{suffix}
 				</span>
@@ -443,7 +688,7 @@ function RangeControl(props: RangeControlProps): JSX.Element {
 				value={value}
 				disabled={disabled}
 				onChange={(event) => onChange(Number(event.target.value))}
-				className="cursor-pointer accent-cyan-500 disabled:cursor-not-allowed"
+				className="slider"
 			/>
 		</label>
 	);
@@ -464,7 +709,7 @@ function Toggle(props: ToggleProps): JSX.Element {
 				type="checkbox"
 				checked={checked}
 				onChange={(event) => onChange(event.target.checked)}
-				className="h-4 w-4 cursor-pointer accent-cyan-500"
+				className="h-4 w-4 cursor-pointer accent-[var(--color-brand)]"
 			/>
 		</label>
 	);

@@ -38,6 +38,9 @@ yarn-error.log*
 .env.local
 .env.*.local
 
+# npm auth (contains publish token — never commit)
+.npmrc
+
 # Vercel
 .vercel
 

@@ -109,6 +109,29 @@ npm run typecheck && npm run lint && npm run test && npm run build && npm run si
 - **Demo → Vercel:** builds with `npm run build:demo` to `dist-demo/` (see `vercel.json`). Import the repo in Vercel once; it auto-deploys on push. Live at [multi-layer-radial-chart-five.vercel.app](https://multi-layer-radial-chart-five.vercel.app/).
 - **Storybook → GitHub Pages:** the `Deploy Storybook` workflow publishes `storybook-static/` (enable Pages with source "GitHub Actions" once). Live at [moshehatab.github.io/multi-layer-radial-chart](https://moshehatab.github.io/multi-layer-radial-chart/).
 
+## Publishing to npm
+
+The package is versioned with [Changesets](https://github.com/changesets/changesets). Pick one of the two flows below — don't mix them.
+
+**Automated (recommended):** commit a changeset and let CI do the rest.
+
+```bash
+npm run changeset   # describe the change; pick the semver bump
+git commit -am "feat: ..." && git push
+```
+
+On push to `main`, the `Release` workflow opens a **"Version Packages"** PR. Merging that PR bumps the version, updates `CHANGELOG.md`, and publishes to npm (requires the `NPM_TOKEN` repository secret).
+
+**Manual (from local):** build, validate, and publish in one step.
+
+```bash
+npm run version       # applies pending changesets + updates CHANGELOG.md (skip for first publish)
+npm run publish:safe  # build → publint + are-the-types-wrong → npm publish
+git commit -am "release" && git push   # commit the version bump / changelog
+```
+
+`publish:safe` is idempotent-friendly: `npm publish` refuses to overwrite an existing version, and CI's `changeset publish` skips versions already on npm — so pushing after a manual publish never double-publishes. Package exports/types can be validated anytime without publishing via `npm run check:package`.
+
 ## License
 
 [MIT](./LICENSE) © 2026 Moshe Hatab

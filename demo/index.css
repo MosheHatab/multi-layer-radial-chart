@@ -1,11 +1,107 @@
 @import "tailwindcss";
 
+@theme {
+	--font-sans:
+		"IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+	--font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+	--color-brand: #fb2576;
+}
+
 :root {
 	color-scheme: dark;
 }
 
 body {
 	margin: 0;
-	font-family:
-		ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+	font-family: var(--font-sans);
+	-webkit-font-smoothing: antialiased;
+	text-rendering: optimizeLegibility;
+}
+
+/* Branded, sharp-edged range slider (Swiss / editorial look) */
+input[type="range"].slider {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 100%;
+	height: 2px;
+	border-radius: 0;
+	background: var(--slider-track, rgba(255, 255, 255, 0.16));
+	outline: none;
+	cursor: pointer;
+}
+
+input[type="range"].slider::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 12px;
+	height: 12px;
+	border-radius: 0;
+	background: var(--color-brand);
+	border: none;
+	transition: transform 0.15s ease;
+}
+
+input[type="range"].slider::-moz-range-thumb {
+	width: 12px;
+	height: 12px;
+	border-radius: 0;
+	background: var(--color-brand);
+	border: none;
+	transition: transform 0.15s ease;
+}
+
+input[type="range"].slider:hover::-webkit-slider-thumb {
+	transform: scale(1.25);
+}
+
+input[type="range"].slider:hover::-moz-range-thumb {
+	transform: scale(1.25);
+}
+
+input[type="range"].slider:focus-visible::-webkit-slider-thumb {
+	box-shadow:
+		0 0 0 2px var(--slider-track),
+		0 0 0 4px var(--color-brand);
+}
+
+input[type="range"].slider:focus-visible::-moz-range-thumb {
+	box-shadow:
+		0 0 0 2px var(--slider-track),
+		0 0 0 4px var(--color-brand);
+}
+
+input[type="range"].slider:disabled {
+	opacity: 0.35;
+	cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	input[type="range"].slider::-webkit-slider-thumb,
+	input[type="range"].slider::-moz-range-thumb {
+		transition: none;
+	}
+}
+
+/* Edge-to-edge color swatch that fills its framed wrapper */
+input[type="color"].swatch {
+	-webkit-appearance: none;
+	appearance: none;
+	padding: 0;
+	border: none;
+	background: transparent;
+	cursor: pointer;
+}
+
+input[type="color"].swatch::-webkit-color-swatch-wrapper {
+	padding: 0;
+}
+
+input[type="color"].swatch::-webkit-color-swatch {
+	border: none;
+	border-radius: 0;
+}
+
+input[type="color"].swatch::-moz-color-swatch {
+	border: none;
+	border-radius: 0;
 }
