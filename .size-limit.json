@@ -1,0 +1,8 @@
+[
+  {
+    "name": "RadialChart (ESM, tree-shaken)",
+    "path": "dist/index.js",
+    "import": "{ RadialChart }",
+    "limit": "12 kB"
+  }
+]

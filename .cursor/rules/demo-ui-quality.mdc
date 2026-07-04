@@ -1,0 +1,36 @@
+---
+description: UI/UX quality checklist for the demo app. Distilled from the ui-ux-pro-max skill. Applies to demo files only.
+globs: ["demo/**"]
+alwaysApply: false
+---
+
+# Demo UI/UX quality checklist
+
+These apply to the `demo/` playground (Tailwind). They do not apply to the library in `src/`, which ships plain CSS. For deeper design guidance, use the `ui-ux-pro-max` skill in `.cursor/skills/` (requires Python).
+
+## Icons & visual elements
+- Use SVG icons (Lucide) - never emojis as UI icons.
+- Consistent icon sizing (e.g. `h-4 w-4` / `h-5 w-5`); decorative icons get `aria-hidden="true"`.
+
+## Interaction & cursor
+- Every clickable/hoverable control has `cursor-pointer`.
+- Hover feedback via color/opacity/border transitions - avoid layout-shifting scale transforms.
+- Transitions are smooth: `transition-colors duration-200` (150-300ms). Not instant, not sluggish (>500ms).
+- Visible keyboard focus states (`focus-visible:outline` or ring).
+
+## Contrast & color
+- Body text contrast >= 4.5:1. On dark backgrounds prefer `text-slate-100` / `text-slate-300`; avoid `text-slate-500` for body copy.
+- Color is not the only indicator - pair color with text/labels.
+
+## Layout & spacing
+- Consistent container max-width.
+- Responsive at 375 / 768 / 1024 / 1440 px; no horizontal scroll on mobile.
+
+## Motion
+- Honor `prefers-reduced-motion` (the library already does; the demo must not force motion on top of it).
+
+## Pre-delivery
+- [ ] No emojis as icons
+- [ ] All interactive elements have `cursor-pointer` + focus states
+- [ ] Sufficient text contrast
+- [ ] Responsive, no horizontal scroll

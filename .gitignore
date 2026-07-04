@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist-demo/
+storybook-static/
+
+# Test / coverage
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor / OS
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Caches
+.eslintcache
+.cache/
+*.tsbuildinfo
+
+# Cursor runtime marker
+.cursor/.review-passed
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Vercel
+.vercel
+
+# Cursor skill: ui-ux-pro-max
+.cursor/skills/ui-ux-pro-max/

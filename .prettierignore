@@ -1,0 +1,8 @@
+dist
+dist-demo
+storybook-static
+coverage
+node_modules
+CHANGELOG.md
+.cursor/skills
+package-lock.json

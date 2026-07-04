@@ -1,0 +1,47 @@
+---
+description: Always-on development hygiene for the multi-layer-radial-chart library. Strict typing (no any), math/UI separation, Rules of Hooks, PascalCase components as JSX, accessibility, and animation cleanup.
+alwaysApply: true
+---
+
+# Radial Chart - always-on development hygiene
+
+These conventions are backed by `eslint.config.js` where possible. Treat ESLint as the source of truth and keep this rule aligned for both humans and the agent.
+
+## 1. Strict typing, no `any`
+
+- `@typescript-eslint/no-explicit-any` is `error`. Never introduce `any` - define precise interfaces/types/generics.
+- Public API types live in `src/types.ts`. Props, config, and utility signatures must be fully typed and, where practical, `readonly`.
+
+## 2. Math and trigonometry stay in `core/`
+
+- All geometry/trigonometry (polar<->cartesian, arc paths, radius/stroke distribution, value scaling) lives in `src/core/**` and `src/utils/math.ts` as pure, side-effect-free functions.
+- Components (`src/components/**`) must not contain trig or layout math inline - import from `core/`. This keeps the UI declarative and the math unit-testable.
+
+## 3. No magic numbers in logic
+
+- `radial/no-magic-numbers` flags numeric literals in logic (ignoring `0`, `1`, `-1`). Extract angles, gaps, durations, and sizes to `src/core/constants.ts`. Style/JSX values are exempt.
+
+## 4. Rules of Hooks / no hooks in iteration
+
+- `react-hooks/rules-of-hooks` is enforced. Never call `useState`/`useMemo`/`useEffect`/`useRef`/`useCallback` or any custom `use*` inside `.map()`/`.forEach()`/loops/conditionals/early returns.
+- For per-ring state (e.g. the animation tween), keep the hook inside a dedicated per-ring component (`RadialRing`) rendered from the `.map()`, never inline in the parent loop.
+
+## 5. PascalCase components are JSX, not function calls
+
+- Render components as JSX (`<RadialRing />`), never invoke them as plain functions (`RadialRing(props)`). Pure helpers that return JSX must be camelCase.
+
+## 6. Accessibility
+
+- The chart `<svg>` carries `role="img"` and a meaningful `aria-label`.
+- Each ring exposes `role="progressbar"` with `aria-valuenow`/`aria-valuemin`/`aria-valuemax` and a `<title>`/`aria-label` of `"{label}: {value}/{max} ({percent}%)"`.
+- Color must not be the only differentiator: expose labels/values (legend) and support a `pattern` (dashed) option.
+- Honor `prefers-reduced-motion` (via `useReducedMotion`) - skip tweening when the user prefers reduced motion.
+
+## 7. Resource cleanup (performance)
+
+- Every `requestAnimationFrame` must be paired with `cancelAnimationFrame` on cleanup; every `ResizeObserver`/`matchMedia` listener must be disconnected/removed in the effect cleanup.
+- Guard browser APIs (`window`, `ResizeObserver`, `matchMedia`, `requestAnimationFrame`) for SSR safety.
+
+## 8. Component size / SRP
+
+- `max-lines-per-function` (250) and `max-lines` (400) are enforced. Extract sub-components/helpers into their own files rather than growing a mega-component.

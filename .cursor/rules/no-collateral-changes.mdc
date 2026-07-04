@@ -1,0 +1,26 @@
+---
+description: Prevent unintended auto-format and import reordering in files not part of the current task.
+alwaysApply: true
+---
+
+# No Collateral File Changes
+
+Keep changes focused. Extra files or additional fixes are allowed when they are intentional and declared (in the PR description / commit body). Accidental noise is not.
+
+## Rules
+
+1. Stay focused, but declared extra work is fine. Note "also touched X because Y" rather than splitting or reverting genuine improvements.
+2. Accidental import reordering by the IDE/formatter in files you did not intend to change should be reverted.
+3. Before committing, review `git diff --name-only` and confirm every file is either part of the task or a declared extra. Restore accidental changes:
+   ```bash
+   git checkout HEAD -- <unintended-file>
+   ```
+4. Editing barrel files (`src/index.ts`) can trigger cascading import re-sorts in consumers - revert consumers that were not intentionally modified.
+5. Whitespace-only / indentation-only diffs outside the task scope should be reverted unless they are an intentional, declared cleanup.
+
+## Pre-Commit Checklist
+
+- [ ] `git diff --name-only` lists only task files plus declared extras
+- [ ] Any extra file / additional fix is noted
+- [ ] No accidental import reordering or whitespace-only changes in unrelated files
+- [ ] `npm run lint` and `npm run typecheck` pass
