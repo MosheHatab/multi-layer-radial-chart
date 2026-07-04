@@ -77,6 +77,12 @@ export default tseslint.config(
 		},
 	},
 	{
+		files: ["**/*.{js,cjs,mjs}"],
+		languageOptions: {
+			globals: { ...globals.node },
+		},
+	},
+	{
 		files: ["tests/**", "**/*.stories.tsx", "demo/**"],
 		rules: {
 			"radial/no-magic-numbers": "off",

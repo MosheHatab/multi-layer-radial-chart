@@ -4,7 +4,7 @@ Animated, Apple-Watch-style activity rings for React — rendered with pure SVG,
 
 <!-- Add a GIF/screenshot of the demo here once deployed, e.g. ./docs/demo.gif -->
 
-### [Live Demo](https://multi-layer-radial-chart.vercel.app) · [Component Explorer (Storybook)](https://mosehatab.github.io/multi-layer-radial-chart/)
+### [Live Demo](https://multi-layer-radial-chart-five.vercel.app/) · [Component Explorer (Storybook)](https://moshehatab.github.io/multi-layer-radial-chart/)
 
 ## Overview
 
@@ -106,8 +106,8 @@ npm run typecheck && npm run lint && npm run test && npm run build && npm run si
 
 ## Deployment
 
-- **Demo → Vercel:** builds with `npm run build:demo` to `dist-demo/` (see `vercel.json`). Import the repo in Vercel once; it auto-deploys on push.
-- **Storybook → GitHub Pages:** the `Deploy Storybook` workflow publishes `storybook-static/` (enable Pages with source "GitHub Actions" once).
+- **Demo → Vercel:** builds with `npm run build:demo` to `dist-demo/` (see `vercel.json`). Import the repo in Vercel once; it auto-deploys on push. Live at [multi-layer-radial-chart-five.vercel.app](https://multi-layer-radial-chart-five.vercel.app/).
+- **Storybook → GitHub Pages:** the `Deploy Storybook` workflow publishes `storybook-static/` (enable Pages with source "GitHub Actions" once). Live at [moshehatab.github.io/multi-layer-radial-chart](https://moshehatab.github.io/multi-layer-radial-chart/).
 
 ## License
 
