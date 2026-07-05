@@ -53,6 +53,9 @@ export function RadialChart(props: RadialChartProps): JSX.Element {
 		maxSweepDegrees = DEFAULT_MAX_SWEEP,
 		showLegend = false,
 		showTooltip = false,
+		onSegmentClick,
+		onSegmentHover,
+		onSegmentLeave,
 		className,
 		children,
 	} = props;
@@ -71,7 +74,11 @@ export function RadialChart(props: RadialChartProps): JSX.Element {
 	);
 
 	const handleHover = useCallback(
-		(datum: NormalizedDatum, clientX: number, clientY: number): void => {
+		(datum: NormalizedDatum, index: number, clientX: number, clientY: number): void => {
+			onSegmentHover?.(datum, index);
+			if (!showTooltip) {
+				return;
+			}
 			const container = containerRef.current;
 			if (!container) {
 				return;
@@ -79,12 +86,18 @@ export function RadialChart(props: RadialChartProps): JSX.Element {
 			const rect = container.getBoundingClientRect();
 			setTooltip({ datum, x: clientX - rect.left, y: clientY - rect.top });
 		},
-		[containerRef],
+		[containerRef, onSegmentHover, showTooltip],
 	);
 
-	const handleLeave = useCallback((): void => {
-		setTooltip(null);
-	}, []);
+	const handleLeave = useCallback(
+		(datum: NormalizedDatum, index: number): void => {
+			onSegmentLeave?.(datum, index);
+			setTooltip(null);
+		},
+		[onSegmentLeave],
+	);
+
+	const hoverEnabled = showTooltip || Boolean(onSegmentHover) || Boolean(onSegmentLeave);
 
 	const shouldAnimate = animate && !prefersReducedMotion;
 	const containerClassName = ["rc-container", className].filter(Boolean).join(" ");
@@ -100,24 +113,35 @@ export function RadialChart(props: RadialChartProps): JSX.Element {
 					role="img"
 					aria-label={buildChartLabel(normalized)}
 				>
-					{rings.map((ring, index) => (
-						<RadialRing
-							key={`${normalized[index].label}-${index}`}
-							center={center}
-							radius={ring.radius}
-							strokeWidth={ring.strokeWidth}
-							datum={normalized[index]}
-							startAngle={startAngle}
-							clockwise={clockwise}
-							rounded={rounded}
-							allowOverflow={allowOverflow}
-							animate={shouldAnimate}
-							durationMs={animationDurationMs}
-							maxSweepDegrees={maxSweepDegrees}
-							onHover={showTooltip ? handleHover : undefined}
-							onLeave={showTooltip ? handleLeave : undefined}
-						/>
-					))}
+					{rings.map((ring, index) => {
+						const datum = normalized[index];
+						return (
+							<RadialRing
+								key={`${datum.label}-${index}`}
+								center={center}
+								radius={ring.radius}
+								strokeWidth={ring.strokeWidth}
+								datum={datum}
+								startAngle={startAngle}
+								clockwise={clockwise}
+								rounded={rounded}
+								allowOverflow={allowOverflow}
+								animate={shouldAnimate}
+								durationMs={animationDurationMs}
+								maxSweepDegrees={maxSweepDegrees}
+								onHover={
+									hoverEnabled
+										? (hovered, clientX, clientY) =>
+												handleHover(hovered, index, clientX, clientY)
+										: undefined
+								}
+								onLeave={hoverEnabled ? () => handleLeave(datum, index) : undefined}
+								onActivate={
+									onSegmentClick ? (clicked) => onSegmentClick(clicked, index) : undefined
+								}
+							/>
+						);
+					})}
 				</svg>
 				{children ? <div className="rc-center">{children}</div> : null}
 				{showTooltip && tooltip ? (

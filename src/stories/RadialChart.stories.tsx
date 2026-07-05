@@ -3,7 +3,11 @@ import { useState } from "react";
 
 import { RadialChart } from "../components/RadialChart";
 import { useCountUp } from "../hooks/useCountUp";
-import type { RadialChartProps, RadialDatum } from "../types";
+import { useRadialChart } from "../hooks/useRadialChart";
+import type { NormalizedDatum, RadialChartProps, RadialDatum } from "../types";
+
+const HEADLESS_SIZE = 260;
+const HEADLESS_GAP = 8;
 
 const activityData: RadialDatum[] = [
 	{ value: 82, max: 100, color: "#fb2576", label: "Move", trackColor: "rgba(251,37,118,0.15)" },
@@ -198,7 +202,7 @@ export const Overflow: Story = {
 		showTooltip: false,
 		data: [
 			{ value: 135, max: 100, color: "#FFD700", label: "Move" },
-			{ value: 90, max: 77, color: "#000000", label: "Sleep", trackColor: "#ffff00" },
+			{ value: 18, max: 77, color: "#005493", label: "Sleep", trackColor: "#005493CC" },
 			{ value: 100, max: 60, color: "#FFC0CB", label: "Exercise" },
 			{ value: 9, max: 50, color: "#b155ef", label: "Stand" },
 		],
@@ -260,6 +264,92 @@ export const PlaygroundControls: StoryObj<PerDatumArgs> = {
 			]}
 		/>
 	),
+};
+
+function InteractiveChart(props: RadialChartProps): React.JSX.Element {
+	const [selected, setSelected] = useState<NormalizedDatum | null>(null);
+	return (
+		<div style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "center" }}>
+			<RadialChart {...props} onSegmentClick={(datum) => setSelected(datum)} />
+			<p
+				style={{
+					fontFamily: "var(--font-mono)",
+					fontSize: 13,
+					minHeight: 20,
+					textAlign: "center",
+				}}
+			>
+				{selected
+					? `Selected: ${selected.label} — ${selected.percent}%`
+					: "Click a ring, or Tab to focus and press Enter"}
+			</p>
+		</div>
+	);
+}
+
+/**
+ * Rings become clickable and keyboard-focusable when `onSegmentClick` is set.
+ * Tab to a ring and press Enter/Space, or click it, to select it. `onSegmentHover`
+ * fires on pointer enter/move (and the tooltip shares the same hover events).
+ */
+export const Interactivity: Story = {
+	args: { showTooltip: true, showLegend: false },
+	render: (args) => <InteractiveChart {...args} />,
+};
+
+/**
+ * Headless usage via `useRadialChart`: the hook returns validated geometry
+ * (radii, stroke widths and ready-to-use SVG `d` strings) and renders nothing
+ * itself, so you can draw the rings with your own SVG markup.
+ */
+function HeadlessChart(): React.JSX.Element {
+	const { center, rings } = useRadialChart(activityData, {
+		size: HEADLESS_SIZE,
+		gap: HEADLESS_GAP,
+	});
+	return (
+		<svg
+			width={HEADLESS_SIZE}
+			height={HEADLESS_SIZE}
+			viewBox={`0 0 ${HEADLESS_SIZE} ${HEADLESS_SIZE}`}
+			role="img"
+			aria-label="Headless radial chart built with useRadialChart"
+		>
+			{rings.map((ring) => (
+				<g key={ring.datum.label}>
+					<path
+						d={ring.trackPath}
+						fill="none"
+						stroke="rgba(148, 163, 184, 0.25)"
+						strokeWidth={ring.strokeWidth}
+						strokeLinecap="round"
+					/>
+					<path
+						d={ring.progressPath}
+						fill="none"
+						stroke={ring.datum.color}
+						strokeWidth={ring.strokeWidth}
+						strokeLinecap="round"
+					/>
+				</g>
+			))}
+			<text
+				x={center}
+				y={center}
+				textAnchor="middle"
+				dominantBaseline="central"
+				fontSize={30}
+				fontWeight={700}
+				fill="currentColor"
+			>
+				{averagePercent(activityData)}%
+			</text>
+		</svg>
+	);
+}
+
+export const Headless: Story = {
+	render: () => <HeadlessChart />,
 };
 
 function AnimatedDemo(props: RadialChartProps): React.JSX.Element {

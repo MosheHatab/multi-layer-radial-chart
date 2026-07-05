@@ -3,6 +3,9 @@ import React from "react";
 
 const PAPER = "#f4f3ee";
 const INK = "#0b0b0f";
+// Storybook stores the selected background *option key* (not the hex) in globals.
+const PAPER_KEY = "paper";
+const INK_KEY = "ink";
 
 interface StageColors {
 	readonly text: string;
@@ -32,17 +35,17 @@ const preview: Preview = {
 		},
 		backgrounds: {
 			options: {
-				ink: { name: "Ink", value: INK },
-				paper: { name: "Paper", value: PAPER },
+				[INK_KEY]: { name: "Ink", value: INK },
+				[PAPER_KEY]: { name: "Paper", value: PAPER },
 			},
 		},
 	},
 	initialGlobals: {
-		backgrounds: { value: "ink" },
+		backgrounds: { value: INK_KEY },
 	},
 	decorators: [
 		(Story, context) => {
-			const isLight = context.globals.backgrounds?.value === PAPER;
+			const isLight = context.globals.backgrounds?.value === PAPER_KEY;
 			const colors = stageColors(isLight);
 			return (
 				<div

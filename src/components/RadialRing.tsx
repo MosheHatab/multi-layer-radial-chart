@@ -1,4 +1,4 @@
-import { type JSX, type PointerEvent, type Ref, useId } from "react";
+import { type JSX, type KeyboardEvent, type PointerEvent, type Ref, useId } from "react";
 
 import {
 	DASH_ARRAY,
@@ -72,6 +72,11 @@ export interface RadialRingProps {
 	onHover?: (datum: NormalizedDatum, clientX: number, clientY: number) => void;
 	/** Pointer-leave callback. */
 	onLeave?: () => void;
+	/**
+	 * Activation callback (click or keyboard Enter/Space). When provided the
+	 * ring becomes focusable and keyboard-operable.
+	 */
+	onActivate?: (datum: NormalizedDatum) => void;
 	/** Optional forwarded ref (React 19 ref-as-prop). */
 	ref?: Ref<SVGGElement>;
 }
@@ -95,6 +100,7 @@ export function RadialRing(props: RadialRingProps): JSX.Element {
 		maxSweepDegrees,
 		onHover,
 		onLeave,
+		onActivate,
 		ref,
 	} = props;
 
@@ -160,19 +166,35 @@ export function RadialRing(props: RadialRingProps): JSX.Element {
 	const accessibleName = `${datum.label}: ${datum.value}/${datum.max} (${datum.percent}%)`;
 	const lineCap = rounded ? "round" : "butt";
 	const isInteractive = typeof onHover === "function";
+	const isClickable = typeof onActivate === "function";
 
 	const handlePointer = (event: PointerEvent<SVGPathElement>): void => {
 		onHover?.(datum, event.clientX, event.clientY);
 	};
 
+	const handleActivate = (): void => {
+		onActivate?.(datum);
+	};
+
+	const handleKeyDown = (event: KeyboardEvent<SVGGElement>): void => {
+		if (event.key === "Enter" || event.key === " ") {
+			event.preventDefault();
+			onActivate?.(datum);
+		}
+	};
+
 	return (
 		<g
 			ref={ref}
+			className={isClickable ? "rc-ring rc-ring-interactive" : "rc-ring"}
 			role="progressbar"
 			aria-label={accessibleName}
 			aria-valuenow={datum.percent}
 			aria-valuemin={ARIA_MIN}
 			aria-valuemax={ARIA_MAX}
+			tabIndex={isClickable ? 0 : undefined}
+			onClick={isClickable ? handleActivate : undefined}
+			onKeyDown={isClickable ? handleKeyDown : undefined}
 		>
 			<title>{accessibleName}</title>
 			{datum.gradient ? (

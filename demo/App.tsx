@@ -187,6 +187,9 @@ export function App(): JSX.Element {
 
 	const [showLegend, setShowLegend] = useState(true);
 	const [showTooltip, setShowTooltip] = useState(true);
+	const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+	const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+	const [eventMessage, setEventMessage] = useState<string | null>(null);
 
 	const tokens = THEMES[theme];
 	const isFullCircle = maxSweepDegrees === 360;
@@ -389,6 +392,18 @@ export function App(): JSX.Element {
 								animationDurationMs={animationDurationMs}
 								showLegend={showLegend}
 								showTooltip={showTooltip}
+								onSegmentClick={(datum, index) => {
+									setSelectedIndex(index);
+									setEventMessage(`Clicked ${datum.label} — ${datum.value}/${datum.max}`);
+								}}
+								onSegmentHover={(datum, index) => {
+									setHoveredIndex(index);
+									setEventMessage(`Hovering ${datum.label} — ${datum.value}/${datum.max}`);
+								}}
+								onSegmentLeave={(datum) => {
+									setHoveredIndex(null);
+									setEventMessage(`Left ${datum.label}`);
+								}}
 							>
 								{isFullCircle ? (
 									<div className="flex flex-col items-center">
@@ -403,12 +418,23 @@ export function App(): JSX.Element {
 									</div>
 								) : null}
 							</RadialChart>
+							<p
+								className={`mt-4 text-center font-mono text-[11px] uppercase tracking-wider ${
+									eventMessage ? "text-brand" : tokens.faint
+								}`}
+								aria-live="polite"
+							>
+								{eventMessage ?? "Hover or click a ring to fire events"}
+							</p>
 						</div>
 					</section>
 
 					<aside className={`border-t lg:border-l lg:border-t-0 ${tokens.frame}`}>
 						<Section index="01" title="Data" tokens={tokens} withDivider={false}>
-							<div className="mb-1 flex justify-end">
+							<div className="mb-1 flex items-center justify-between gap-2">
+								<span className={`font-mono text-[10px] uppercase tracking-wider ${tokens.faint}`}>
+									Click a ring to select · <br/>hover to highlight
+								</span>
 								<button
 									type="button"
 									onClick={shuffle}
@@ -448,7 +474,17 @@ export function App(): JSX.Element {
 													/>
 												</span>
 											) : null}
-											{metric.label}
+											<span
+												className={
+													selectedIndex === index
+														? "font-semibold text-brand"
+														: hoveredIndex === index
+															? "text-brand underline decoration-brand underline-offset-4"
+															: undefined
+												}
+											>
+												{metric.label}
+											</span>
 										</span>
 										<span className="flex items-center gap-2">
 											<span className={`font-mono tabular-nums ${tokens.muted}`}>

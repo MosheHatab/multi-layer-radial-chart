@@ -84,6 +84,15 @@ export interface RadialChartProps {
 	showLegend?: boolean;
 	/** Show a hover tooltip per ring. Default `false`. */
 	showTooltip?: boolean;
+	/**
+	 * Called when a ring is activated by click or keyboard (Enter/Space).
+	 * Providing this makes each ring focusable and keyboard-operable.
+	 */
+	onSegmentClick?: (datum: NormalizedDatum, index: number) => void;
+	/** Called when the pointer enters or moves over a ring. */
+	onSegmentHover?: (datum: NormalizedDatum, index: number) => void;
+	/** Called when the pointer leaves a previously hovered ring. */
+	onSegmentLeave?: (datum: NormalizedDatum, index: number) => void;
 	/** Extra class name applied to the outer container. */
 	className?: string;
 	/** Content rendered in the centre of the chart. */

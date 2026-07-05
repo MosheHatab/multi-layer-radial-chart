@@ -11,7 +11,7 @@ Animated, Apple-Watch-style activity rings for React — rendered with pure SVG,
 
 <!-- Add a GIF/screenshot of the demo here once deployed, e.g. ./docs/demo.gif -->
 
-### [Live Demo](https://multi-layer-radial-chart-five.vercel.app/) · [Component Explorer (Storybook)](https://moshehatab.github.io/multi-layer-radial-chart/)
+### [Live Demo](https://multi-layer-radial-chart-five.vercel.app/) · [Component Explorer (Storybook)](https://moshehatab.github.io/multi-layer-radial-chart/) · [Open in StackBlitz](https://stackblitz.com/github/MosheHatab/multi-layer-radial-chart/tree/main/examples/vite)
 
 ## Overview
 
@@ -86,6 +86,9 @@ export function Dashboard() {
 | `maxSweepDegrees`     | `number`                  | `360`          | Total sweep; `270` gauge, `180` semicircle.             |
 | `showLegend`          | `boolean`                 | `false`        | Render the built-in legend.                             |
 | `showTooltip`         | `boolean`                 | `false`        | Show a hover tooltip per ring.                          |
+| `onSegmentClick`      | `(datum, index) => void`  | —              | Click/keyboard activate a ring (makes rings focusable). |
+| `onSegmentHover`      | `(datum, index) => void`  | —              | Fires on pointer enter/move over a ring.                |
+| `onSegmentLeave`      | `(datum, index) => void`  | —              | Fires when the pointer leaves a ring.                   |
 | `className`           | `string`                  | —              | Class applied to the outer container.                   |
 | `children`            | `ReactNode`               | —              | Content rendered in the chart's center.                 |
 
@@ -106,6 +109,20 @@ Give a datum a `threshold` (in the same units as `value`) to draw a tick on its 
 ```tsx
 <RadialChart data={[{ value: 82, max: 100, color: "#fb2576", label: "Move", threshold: 90 }]} />
 ```
+
+### Interactivity (`onSegmentClick` / `onSegmentHover`)
+
+Provide `onSegmentClick` to make each ring clickable **and** keyboard-focusable (Tab to focus, Enter/Space to activate). `onSegmentHover` / `onSegmentLeave` report pointer enter/leave and are independent of the built-in tooltip:
+
+```tsx
+<RadialChart
+  data={data}
+  onSegmentClick={(datum, index) => console.log("clicked", index, datum.label)}
+  onSegmentHover={(datum) => setActive(datum.label)}
+/>
+```
+
+Focused rings show a `:focus-visible` outline you can theme with the `--rc-focus-color` CSS variable.
 
 ### Gradient rings
 

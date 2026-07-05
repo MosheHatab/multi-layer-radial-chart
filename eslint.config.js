@@ -20,6 +20,7 @@ export default tseslint.config(
 			"storybook-static",
 			"coverage",
 			"node_modules",
+			"examples/**",
 			".cursor/skills/**",
 		],
 	},
