@@ -1,6 +1,6 @@
 {
   "name": "multi-layer-radial-chart",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "A lightweight, dependency-free React 19 + TypeScript library for animated multi-layer radial (activity-ring) charts, rendered with pure SVG.",
   "type": "module",
   "license": "MIT",
