@@ -1,5 +1,7 @@
 .rc-container {
 	--rc-track-color: rgba(15, 23, 42, 0.08);
+	--rc-marker-color: rgba(0, 0, 0, 0.65);
+	--rc-marker-outline: rgba(255, 255, 255, 0.92);
 	--rc-transition: 200ms ease;
 	display: inline-flex;
 	flex-direction: column;
@@ -21,6 +23,24 @@
 
 .rc-ring-progress {
 	transition: stroke var(--rc-transition);
+}
+
+/*
+ * Overflow (second lap) arc transitions with the ring color. The leading tip
+ * carries an inline, contrast-colored drop shadow (set in RadialRing) so the
+ * end reads as floating above the base ring — the Apple Watch depth effect —
+ * while the start stays seamless.
+ */
+.rc-ring-overflow path {
+	transition: stroke var(--rc-transition);
+}
+
+/*
+ * Marker: two stacked lines — wide light outline + narrow dark tick.
+ * This combination is readable on any ring color and any page background.
+ */
+.rc-ring-marker {
+	/* no filter needed; two-line rendering provides its own contrast */
 }
 
 .rc-center {

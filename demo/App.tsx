@@ -1,7 +1,7 @@
 import { type CSSProperties, type JSX, type ReactNode, useMemo, useState } from "react";
 import { Check, Copy, ExternalLink, Moon, RefreshCw, Sun } from "lucide-react";
 
-import { RadialChart } from "../src";
+import { RadialChart, useCountUp } from "../src";
 import type { RadialDatum, RingPattern } from "../src";
 
 type ThemeMode = "dark" | "light";
@@ -11,6 +11,8 @@ interface Metric {
 	readonly value: number;
 	readonly max: number;
 	readonly color: string;
+	readonly colorTo: string;
+	readonly gradient: boolean;
 	readonly pattern: RingPattern;
 }
 
@@ -30,10 +32,12 @@ interface ThemeTokens {
 }
 
 const INITIAL_METRICS: Metric[] = [
-	{ label: "Move", value: 82, max: 100, color: "#fb2576", pattern: "solid" },
-	{ label: "Exercise", value: 45, max: 60, color: "#22d3ee", pattern: "solid" },
-	{ label: "Stand", value: 9, max: 12, color: "#a3e635", pattern: "solid" },
+	{ label: "Move", value: 82, max: 100, color: "#fb2576", colorTo: "#8b5cf6", gradient: false, pattern: "solid" },
+	{ label: "Exercise", value: 45, max: 60, color: "#22d3ee", colorTo: "#3b82f6", gradient: false, pattern: "solid" },
+	{ label: "Stand", value: 9, max: 12, color: "#a3e635", colorTo: "#16a34a", gradient: false, pattern: "solid" },
 ];
+
+const GRADIENT_ANGLE = 90;
 
 const LAYOUT_PRESETS = [
 	{ label: "Rings", maxSweepDegrees: 360, startAngle: -90 },
@@ -129,6 +133,10 @@ function buildSnippet(config: SnippetConfig): string {
 			];
 			if (metric.pattern === "dashed") {
 				fields.push(`pattern: "dashed"`);
+			}
+			if (metric.gradient) {
+				const stops = `[{ offset: 0, color: ${JSON.stringify(metric.color)} }, { offset: 1, color: ${JSON.stringify(metric.colorTo)} }]`;
+				fields.push(`gradient: { type: "linear", angle: ${GRADIENT_ANGLE}, stops: ${stops} }`);
 			}
 			return `  { ${fields.join(", ")} },`;
 		})
@@ -226,6 +234,16 @@ export function App(): JSX.Element {
 				color: metric.color,
 				trackColor: withAlpha(metric.color, theme === "dark" ? 0.16 : 0.12),
 				pattern: metric.pattern,
+				gradient: metric.gradient
+					? {
+							type: "linear",
+							angle: GRADIENT_ANGLE,
+							stops: [
+								{ offset: 0, color: metric.color },
+								{ offset: 1, color: metric.colorTo },
+							],
+						}
+					: undefined,
 			})),
 		[metrics, theme],
 	);
@@ -234,6 +252,8 @@ export function App(): JSX.Element {
 		const sum = metrics.reduce((acc, metric) => acc + metric.value / metric.max, 0);
 		return Math.round((sum / metrics.length) * 100);
 	}, [metrics]);
+
+	const animatedPercent = useCountUp(totalPercent, { durationMs: animationDurationMs, animate });
 
 	const setValue = (index: number, value: number): void => {
 		setMetrics((current) =>
@@ -244,6 +264,20 @@ export function App(): JSX.Element {
 	const setColor = (index: number, color: string): void => {
 		setMetrics((current) =>
 			current.map((metric, position) => (position === index ? { ...metric, color } : metric)),
+		);
+	};
+
+	const setColorTo = (index: number, colorTo: string): void => {
+		setMetrics((current) =>
+			current.map((metric, position) => (position === index ? { ...metric, colorTo } : metric)),
+		);
+	};
+
+	const toggleGradient = (index: number): void => {
+		setMetrics((current) =>
+			current.map((metric, position) =>
+				position === index ? { ...metric, gradient: !metric.gradient } : metric,
+			),
 		);
 	};
 
@@ -359,7 +393,7 @@ export function App(): JSX.Element {
 								{isFullCircle ? (
 									<div className="flex flex-col items-center">
 										<span className="font-mono text-4xl font-semibold tabular-nums">
-											{totalPercent}%
+											{animatedPercent}%
 										</span>
 										<span
 											className={`font-mono text-[10px] uppercase tracking-[0.2em] ${tokens.faint}`}
@@ -400,12 +434,36 @@ export function App(): JSX.Element {
 													title="Ring color"
 												/>
 											</span>
+											{metric.gradient ? (
+												<span
+													className={`inline-flex h-5 w-5 items-center justify-center border ${tokens.frame}`}
+												>
+													<input
+														type="color"
+														value={metric.colorTo}
+														onChange={(event) => setColorTo(index, event.target.value)}
+														className="swatch h-full w-full"
+														aria-label={`${metric.label} gradient end color`}
+														title="Gradient end color"
+													/>
+												</span>
+											) : null}
 											{metric.label}
 										</span>
 										<span className="flex items-center gap-2">
 											<span className={`font-mono tabular-nums ${tokens.muted}`}>
 												{metric.value}/{metric.max}
 											</span>
+											<button
+												type="button"
+												onClick={() => toggleGradient(index)}
+												aria-pressed={metric.gradient}
+												className={`cursor-pointer border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider transition-colors duration-200 ${
+													metric.gradient ? tokens.chipActive : tokens.chip
+												}`}
+											>
+												Grad
+											</button>
 											<button
 												type="button"
 												onClick={() => togglePattern(index)}

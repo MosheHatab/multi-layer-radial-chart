@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { toFraction, toPercent } from "../src/core/scale";
+import { toFraction, toPercent, toRawFraction } from "../src/core/scale";
 
 describe("toFraction", () => {
 	it("computes a normal fraction", () => {
@@ -36,5 +36,22 @@ describe("toPercent", () => {
 
 	it("returns 0 for invalid input", () => {
 		expect(toPercent(10, 0)).toBe(0);
+	});
+});
+
+describe("toRawFraction", () => {
+	it("does not clamp values above max", () => {
+		expect(toRawFraction(150, 100)).toBe(1.5);
+		expect(toRawFraction(250, 100)).toBe(2.5);
+	});
+
+	it("clamps negative values to 0 but keeps normal fractions", () => {
+		expect(toRawFraction(-10, 100)).toBe(0);
+		expect(toRawFraction(50, 100)).toBe(0.5);
+	});
+
+	it("returns 0 for invalid input", () => {
+		expect(toRawFraction(10, 0)).toBe(0);
+		expect(toRawFraction(Number.NaN, 100)).toBe(0);
 	});
 });

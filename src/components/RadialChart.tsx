@@ -46,6 +46,7 @@ export function RadialChart(props: RadialChartProps): JSX.Element {
 		gap = DEFAULT_GAP,
 		ringWidth,
 		rounded = true,
+		allowOverflow = false,
 		animate = true,
 		animationDurationMs = DEFAULT_ANIMATION_MS,
 		clockwise = true,
@@ -109,6 +110,7 @@ export function RadialChart(props: RadialChartProps): JSX.Element {
 							startAngle={startAngle}
 							clockwise={clockwise}
 							rounded={rounded}
+							allowOverflow={allowOverflow}
 							animate={shouldAnimate}
 							durationMs={animationDurationMs}
 							maxSweepDegrees={maxSweepDegrees}

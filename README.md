@@ -1,5 +1,12 @@
 # Multi-Layer Radial Chart
 
+[![npm version](https://img.shields.io/npm/v/multi-layer-radial-chart.svg)](https://www.npmjs.com/package/multi-layer-radial-chart)
+[![npm downloads](https://img.shields.io/npm/dm/multi-layer-radial-chart.svg)](https://www.npmjs.com/package/multi-layer-radial-chart)
+[![minzipped size](https://img.shields.io/bundlephobia/minzip/multi-layer-radial-chart)](https://bundlephobia.com/package/multi-layer-radial-chart)
+[![CI](https://github.com/MosheHatab/multi-layer-radial-chart/actions/workflows/ci.yml/badge.svg)](https://github.com/MosheHatab/multi-layer-radial-chart/actions/workflows/ci.yml)
+[![provenance](https://img.shields.io/npm/v/multi-layer-radial-chart?label=provenance&logo=npm)](https://www.npmjs.com/package/multi-layer-radial-chart#provenance)
+[![license: MIT](https://img.shields.io/npm/l/multi-layer-radial-chart.svg)](./LICENSE)
+
 Animated, Apple-Watch-style activity rings for React — rendered with pure SVG, zero chart dependencies.
 
 <!-- Add a GIF/screenshot of the demo here once deployed, e.g. ./docs/demo.gif -->
@@ -72,6 +79,7 @@ export function Dashboard() {
 | `gap`                 | `number`                  | `6`            | Pixel gap between rings.                                 |
 | `ringWidth`           | `number`                  | auto           | Fixed stroke width; auto-derived when omitted.          |
 | `rounded`             | `boolean`                 | `true`         | Round the arc line caps.                                |
+| `allowOverflow`       | `boolean`                 | `false`        | Let values > `max` overrun as an overlapping extra lap. |
 | `animate`             | `boolean`                 | `true`         | Animate value transitions.                              |
 | `animationDurationMs` | `number`                  | `800`          | Tween duration.                                         |
 | `clockwise`           | `boolean`                 | `true`         | Draw arcs clockwise.                                    |
@@ -81,7 +89,95 @@ export function Dashboard() {
 | `className`           | `string`                  | —              | Class applied to the outer container.                   |
 | `children`            | `ReactNode`               | —              | Content rendered in the chart's center.                 |
 
-Each `RadialDatum` is `{ value, max, color, label, trackColor?, pattern? }` where `pattern` is `"solid" | "dashed"`.
+Each `RadialDatum` is `{ value, max, color, label, trackColor?, pattern?, gradient?, threshold? }` where `pattern` is `"solid" | "dashed"`.
+
+### Overflow (values past 100%)
+
+Set `allowOverflow` so a value greater than its `max` overruns the ring as an overlapping extra lap (Apple-Watch style) instead of clamping at 100%:
+
+```tsx
+<RadialChart allowOverflow data={[{ value: 135, max: 100, color: "#fb2576", label: "Move" }]} />
+```
+
+### Goal markers (`threshold`)
+
+Give a datum a `threshold` (in the same units as `value`) to draw a tick on its track marking a goal. Style it with the `--rc-marker-color` CSS variable:
+
+```tsx
+<RadialChart data={[{ value: 82, max: 100, color: "#fb2576", label: "Move", threshold: 90 }]} />
+```
+
+### Gradient rings
+
+Give any datum a `gradient` to fill its progress arc with an SVG-native linear or radial gradient (it overrides `color`):
+
+```tsx
+const data = [
+  {
+    value: 82,
+    max: 100,
+    label: "Move",
+    color: "#fb2576", // fallback if gradient is ignored
+    gradient: {
+      type: "linear", // "linear" | "radial"
+      angle: 45,       // degrees, linear only (0 = left→right)
+      stops: [
+        { offset: 0, color: "#f472b6" },
+        { offset: 1, color: "#8b5cf6" },
+      ],
+    },
+  },
+];
+```
+
+> Note: SVG paint supports `linear` and `radial` gradients natively. A true *conic* (angular) gradient is not part of the SVG spec, so it is intentionally not offered.
+
+### Center content & count-up
+
+Anything you pass as `children` is centered inside the rings. Use the `useCountUp` hook for an animated number:
+
+```tsx
+import { RadialChart, useCountUp } from "multi-layer-radial-chart";
+
+function Ring({ percent }: { percent: number }) {
+  const value = useCountUp(percent, { durationMs: 1200 });
+  return (
+    <RadialChart data={[{ value: percent, max: 100, color: "#6366f1", label: "Goal" }]}>
+      <strong>{value}%</strong>
+    </RadialChart>
+  );
+}
+```
+
+### Headless usage (`useRadialChart`)
+
+Need full control over the markup? `useRadialChart` computes all the geometry (radii, stroke widths and ready-to-use SVG path strings) and renders nothing, so you can build your own SVG:
+
+```tsx
+import { useRadialChart } from "multi-layer-radial-chart";
+
+function CustomRings({ data }: { data: RadialDatum[] }) {
+  const { size, rings } = useRadialChart(data, { size: 240, gap: 6 });
+  return (
+    <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size}>
+      {rings.map((ring, i) => (
+        <g key={i}>
+          <path d={ring.trackPath} fill="none" stroke="#eee" strokeWidth={ring.strokeWidth} />
+          <path
+            d={ring.progressPath}
+            fill="none"
+            stroke={ring.datum.color}
+            strokeWidth={ring.strokeWidth}
+            strokeLinecap="round"
+          />
+        </g>
+      ))}
+    </svg>
+  );
+}
+```
+
+The library also exports the lower-level building blocks — `useAnimatedValue`, `useElementSize`, `useReducedMotion`, `describeArc`, `gradientVector`, `polarToCartesian`, `computeRingLayout`, `toFraction`, `toPercent` — for advanced compositions.
 
 ## Development
 

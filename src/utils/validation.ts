@@ -1,4 +1,4 @@
-import { toFraction, toPercent } from "../core/scale";
+import { toFraction, toPercent, toRawFraction } from "../core/scale";
 import type { NormalizedDatum, RadialDatum, RingPattern } from "../types";
 
 const FALLBACK_COLOR = "#3b82f6";
@@ -49,7 +49,24 @@ export function normalizeDatum(datum: RadialDatum, index: number): NormalizedDat
 		warn(`data[${index}].max must be greater than 0; the ring will render empty.`);
 	}
 	if (value > max && max > 0) {
-		warn(`data[${index}].value (${value}) exceeds max (${max}); clamping to 100%.`);
+		warn(
+			`data[${index}].value (${value}) exceeds max (${max}); it is clamped to 100% unless allowOverflow is set.`,
+		);
+	}
+
+	if (datum.gradient !== undefined && datum.gradient.stops.length === 0) {
+		warn(`data[${index}].gradient has no stops; falling back to color "${color}".`);
+	}
+	const gradient =
+		datum.gradient !== undefined && datum.gradient.stops.length > 0 ? datum.gradient : undefined;
+
+	let thresholdFraction: number | undefined;
+	if (datum.threshold !== undefined) {
+		if (!Number.isFinite(datum.threshold) || datum.threshold < 0 || datum.threshold > max) {
+			warn(`data[${index}].threshold (${datum.threshold}) is outside [0, max]; ignoring it.`);
+		} else {
+			thresholdFraction = toFraction(datum.threshold, max);
+		}
 	}
 
 	return {
@@ -59,8 +76,11 @@ export function normalizeDatum(datum: RadialDatum, index: number): NormalizedDat
 		label,
 		trackColor: datum.trackColor,
 		pattern: normalizePattern(datum.pattern),
+		gradient,
 		fraction: toFraction(value, max),
+		rawFraction: toRawFraction(value, max),
 		percent: toPercent(value, max),
+		thresholdFraction,
 	};
 }
 

@@ -3,6 +3,33 @@ import type { ReactNode } from "react";
 /** Visual pattern for a ring's progress stroke (color-independent differentiation). */
 export type RingPattern = "solid" | "dashed";
 
+/** SVG-native gradient kind for a ring's progress stroke. */
+export type RingGradientType = "linear" | "radial";
+
+/** A single color stop within a {@link RingGradient}. */
+export interface RingGradientStop {
+	/** Stop position as a fraction in `[0, 1]`. */
+	readonly offset: number;
+	/** CSS color for this stop. */
+	readonly color: string;
+	/** Optional stop opacity in `[0, 1]`. Defaults to `1`. */
+	readonly opacity?: number;
+}
+
+/**
+ * A gradient fill for a ring's progress stroke. SVG natively supports `linear`
+ * and `radial` gradients (a true conic gradient is not part of the SVG paint
+ * spec, so it is intentionally not offered here).
+ */
+export interface RingGradient {
+	/** Gradient kind. Defaults to `"linear"`. */
+	readonly type?: RingGradientType;
+	/** Direction in degrees for a linear gradient (0 = left→right). Default `0`. */
+	readonly angle?: number;
+	/** Ordered color stops (at least two recommended). */
+	readonly stops: readonly RingGradientStop[];
+}
+
 /** A single data series rendered as one concentric ring. */
 export interface RadialDatum {
 	/** Current value. Values outside `[0, max]` are clamped for rendering. */
@@ -17,6 +44,13 @@ export interface RadialDatum {
 	readonly trackColor?: string;
 	/** Optional stroke pattern for the progress arc. Defaults to `"solid"`. */
 	readonly pattern?: RingPattern;
+	/** Optional gradient fill for the progress arc. Overrides `color` when set. */
+	readonly gradient?: RingGradient;
+	/**
+	 * Optional goal marker drawn as a tick on the track, expressed in the same
+	 * units as `value` (i.e. relative to `max`). Ignored when outside `[0, max]`.
+	 */
+	readonly threshold?: number;
 }
 
 /** Public props for the {@link RadialChart} component. */
@@ -33,6 +67,11 @@ export interface RadialChartProps {
 	ringWidth?: number;
 	/** Round the arc line caps. Default `true`. */
 	rounded?: boolean;
+	/**
+	 * Allow values above `max` to overrun the ring as an overlapping extra lap
+	 * (Apple-Watch style). When `false` (default) progress is clamped at 100%.
+	 */
+	allowOverflow?: boolean;
 	/** Animate value transitions. Default `true`. */
 	animate?: boolean;
 	/** Tween duration in milliseconds. Default `800`. */
@@ -73,8 +112,13 @@ export interface NormalizedDatum {
 	readonly label: string;
 	readonly trackColor?: string;
 	readonly pattern: RingPattern;
-	/** Progress as a fraction in `[0, 1]`. */
+	readonly gradient?: RingGradient;
+	/** Progress as a fraction in `[0, 1]` (clamped). */
 	readonly fraction: number;
-	/** Progress as an integer percentage in `[0, 100]`. */
+	/** Unclamped progress as a fraction (`>= 0`); can exceed `1` for overflow. */
+	readonly rawFraction: number;
+	/** Progress as an integer percentage in `[0, 100]` (clamped). */
 	readonly percent: number;
+	/** Goal marker position as a fraction in `[0, 1]`, or `undefined` if unset. */
+	readonly thresholdFraction?: number;
 }
