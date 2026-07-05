@@ -9,7 +9,11 @@
 
 Animated, Apple-Watch-style activity rings for React — rendered with pure SVG, zero chart dependencies.
 
-<!-- Add a GIF/screenshot of the demo here once deployed, e.g. ./docs/demo.gif -->
+<p align="center">
+  <a href="https://multi-layer-radial-chart-five.vercel.app/">
+    <img src="https://raw.githubusercontent.com/MosheHatab/multi-layer-radial-chart/main/docs/demo.gif" alt="Multi-Layer Radial Chart — animated activity rings with live controls" width="720" />
+  </a>
+</p>
 
 ### [Live Demo](https://multi-layer-radial-chart-five.vercel.app/) · [Component Explorer (Storybook)](https://moshehatab.github.io/multi-layer-radial-chart/) · [Open in StackBlitz](https://stackblitz.com/github/MosheHatab/multi-layer-radial-chart/tree/main/examples/vite)
 
@@ -195,6 +199,22 @@ function CustomRings({ data }: { data: RadialDatum[] }) {
 ```
 
 The library also exports the lower-level building blocks — `useAnimatedValue`, `useElementSize`, `useReducedMotion`, `describeArc`, `gradientVector`, `polarToCartesian`, `computeRingLayout`, `toFraction`, `toPercent` — for advanced compositions.
+
+### Framework-agnostic core (`multi-layer-radial-chart/core`)
+
+The math is fully decoupled from React. Import the `/core` subpath to get the pure geometry, scaling, layout, validation and color helpers with **zero React** in the dependency graph — use it from Vue, Svelte, Solid, vanilla JS, a `<canvas>` renderer, or on the server:
+
+```ts
+import { validateData, computeRingLayout, describeArc } from "multi-layer-radial-chart/core";
+
+const data = [{ value: 82, max: 100, color: "#fb2576", label: "Move" }];
+const rings = validateData(data);
+const layout = computeRingLayout(rings.length, 240, 6);
+const path = describeArc(120, 120, layout[0].radius, rings[0].fraction, -90, true);
+// → feed `path` into any SVG/Canvas renderer
+```
+
+The `/core` entry exports `describeArc`, `describeArcSegment`, `polarToCartesian`, `gradientVector`, `markerLine`, `computeRingLayout`, `toFraction`, `toPercent`, `toRawFraction`, `validateData`, `normalizeDatum`, `contrastingColor`, `contrastShadow`, and all non-React types (`RadialDatum`, `NormalizedDatum`, `RingGradient`, `Point`, `RingLayout`, …).
 
 ## Development
 

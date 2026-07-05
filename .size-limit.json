@@ -4,5 +4,10 @@
     "path": "dist/index.js",
     "import": "{ RadialChart }",
     "limit": "12 kB"
+  },
+  {
+    "name": "core (ESM, no React)",
+    "path": "dist/core.js",
+    "limit": "6 kB"
   }
 ]

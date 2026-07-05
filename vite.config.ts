@@ -16,10 +16,13 @@ export default defineConfig({
 	],
 	build: {
 		lib: {
-			entry: resolve(__dirname, "src/index.ts"),
-			name: "MultiLayerRadialChart",
+			entry: {
+				index: resolve(__dirname, "src/index.ts"),
+				core: resolve(__dirname, "src/core.ts"),
+			},
 			formats: ["es", "cjs"],
-			fileName: (format) => (format === "es" ? "index.js" : "index.cjs"),
+			fileName: (format, entryName) =>
+				`${entryName}.${format === "es" ? "js" : "cjs"}`,
 		},
 		rollupOptions: {
 			external: ["react", "react-dom", "react/jsx-runtime"],
