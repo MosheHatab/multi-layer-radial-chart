@@ -9,6 +9,8 @@
 
 Animated, Apple-Watch-style activity rings for React — rendered with pure SVG, zero chart dependencies.
 
+> **Building for React Native / Expo?** Use the sibling package [`multi-layer-radial-chart-native`](https://www.npmjs.com/package/multi-layer-radial-chart-native) — the same engine and API, rendered with `react-native-svg`.
+
 <p align="center">
   <a href="https://multi-layer-radial-chart-five.vercel.app/">
     <img src="https://raw.githubusercontent.com/MosheHatab/multi-layer-radial-chart/main/docs/demo.gif" alt="Multi-Layer Radial Chart — animated activity rings with live controls" width="720" />
@@ -215,6 +217,31 @@ const path = describeArc(120, 120, layout[0].radius, rings[0].fraction, -90, tru
 ```
 
 The `/core` entry exports `describeArc`, `describeArcSegment`, `polarToCartesian`, `gradientVector`, `markerLine`, `computeRingLayout`, `toFraction`, `toPercent`, `toRawFraction`, `validateData`, `normalizeDatum`, `contrastingColor`, `contrastShadow`, and all non-React types (`RadialDatum`, `NormalizedDatum`, `RingGradient`, `Point`, `RingLayout`, …).
+
+## Accessibility
+
+- The chart `<svg>` carries `role="img"` and a summary `aria-label` describing every ring.
+- Each ring is a `role="progressbar"` with `aria-valuenow` / `aria-valuemin` / `aria-valuemax` and a `<title>` of `"{label}: {value}/{max} ({percent}%)"`.
+- Color is never the only differentiator — the optional legend exposes labels/values, and `pattern: "dashed"` distinguishes rings without relying on color.
+- Animation honors `prefers-reduced-motion` (via `useReducedMotion`) — rings snap instead of tweening.
+- When `onSegmentClick` is set, rings become keyboard-focusable (Tab, then Enter/Space) with a themeable `:focus-visible` outline (`--rc-focus-color`).
+
+## Project structure
+
+```
+src/
+  core/          # pure math — geometry, scale, layout, constants (no React)
+  utils/         # math, color (WCAG contrast), validation (no React)
+  hooks/         # useAnimatedValue, useCountUp, useReducedMotion, useElementSize, useRadialChart
+  components/    # RadialChart, RadialRing, RadialChartLabels, RadialTooltip
+  types.ts       # public types
+  index.ts       # main entry
+  core.ts        # framework-agnostic /core entry
+demo/            # Vite + Tailwind playground (the live demo)
+src/stories/     # Storybook stories (the component explorer)
+```
+
+The `core/` + `utils/` math layer is shared **verbatim** with the React Native port ([`multi-layer-radial-chart-native`](https://www.npmjs.com/package/multi-layer-radial-chart-native)); only the hooks and components differ per platform.
 
 ## Development
 

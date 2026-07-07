@@ -39,12 +39,14 @@ const meta: Meta<typeof RadialChart> = {
 		maxSweepDegrees: 360,
 		showLegend: true,
 		showTooltip: true,
+		percentDecimals: 0,
 	},
 	argTypes: {
 		maxSweepDegrees: { control: { type: "range", min: 90, max: 360, step: 10 } },
 		animationDurationMs: { control: { type: "range", min: 0, max: 2000, step: 100 } },
 		gap: { control: { type: "range", min: 0, max: 24, step: 1 } },
 		size: { control: { type: "range", min: 120, max: 480, step: 10 } },
+		percentDecimals: { control: { type: "range", min: 0, max: 4, step: 1 } },
 	},
 };
 
@@ -223,6 +225,26 @@ export const ThresholdMarkers: Story = {
 			{ value: 74, max: 100, color: "#6366f1", label: "Sales ($k)", threshold: 90 },
 			{ value: 128, max: 150, color: "#22c55e", label: "Sign-ups", threshold: 100 },
 			{ value: 52, max: 100, color: "#f59e0b", label: "Retention %", threshold: 70 },
+		],
+	},
+};
+
+/**
+ * `percentDecimals` controls how many decimal places the legend shows for each
+ * ring's percentage. The default (`0`) rounds to whole numbers; increasing it
+ * reveals the true value. Formatting uses `toFixed`, so a value like `58.31%`
+ * renders exactly instead of leaking a floating-point tail (`58.31000000000001%`).
+ * Try dragging the `percentDecimals` control between 0 and 4.
+ */
+export const PrecisePercentages: Story = {
+	args: {
+		showLegend: true,
+		showTooltip: false,
+		percentDecimals: 2,
+		data: [
+			{ value: 73.54, max: 99.745, color: "#fb2576", label: "Move" },
+			{ value: 58.31, max: 100, color: "#22d3ee", label: "Exercise" },
+			{ value: 1, max: 3, color: "#a3e635", label: "Stand" },
 		],
 	},
 };

@@ -1,4 +1,4 @@
-import { type CSSProperties, type JSX, type ReactNode, useMemo, useState } from "react";
+import { type CSSProperties, type JSX, type ReactNode, useEffect, useMemo, useState } from "react";
 import { Check, Copy, ExternalLink, Moon, RefreshCw, Sun } from "lucide-react";
 
 import { RadialChart, useCountUp } from "../src";
@@ -32,9 +32,33 @@ interface ThemeTokens {
 }
 
 const INITIAL_METRICS: Metric[] = [
-	{ label: "Move", value: 82, max: 100, color: "#fb2576", colorTo: "#8b5cf6", gradient: false, pattern: "solid" },
-	{ label: "Exercise", value: 45, max: 60, color: "#22d3ee", colorTo: "#3b82f6", gradient: false, pattern: "solid" },
-	{ label: "Stand", value: 9, max: 12, color: "#a3e635", colorTo: "#16a34a", gradient: false, pattern: "solid" },
+	{
+		label: "Move",
+		value: 82,
+		max: 100,
+		color: "#fb2576",
+		colorTo: "#8b5cf6",
+		gradient: false,
+		pattern: "solid",
+	},
+	{
+		label: "Exercise",
+		value: 45,
+		max: 60,
+		color: "#22d3ee",
+		colorTo: "#3b82f6",
+		gradient: false,
+		pattern: "solid",
+	},
+	{
+		label: "Stand",
+		value: 58.31,
+		max: 100,
+		color: "#a3e635",
+		colorTo: "#16a34a",
+		gradient: false,
+		pattern: "solid",
+	},
 ];
 
 const GRADIENT_ANGLE = 90;
@@ -106,6 +130,26 @@ function useCopy(): readonly [boolean, (text: string) => void] {
 	return [copied, copy] as const;
 }
 
+/** Tracks the user's `prefers-reduced-motion` setting (SSR-safe, with cleanup). */
+function usePrefersReducedMotion(): boolean {
+	const [reduced, setReduced] = useState<boolean>(() => {
+		if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+			return false;
+		}
+		return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+	});
+	useEffect(() => {
+		if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+			return;
+		}
+		const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+		const handleChange = (event: MediaQueryListEvent): void => setReduced(event.matches);
+		query.addEventListener("change", handleChange);
+		return () => query.removeEventListener("change", handleChange);
+	}, []);
+	return reduced;
+}
+
 interface SnippetConfig {
 	metrics: readonly Metric[];
 	size: number;
@@ -120,6 +164,7 @@ interface SnippetConfig {
 	animationDurationMs: number;
 	showLegend: boolean;
 	showTooltip: boolean;
+	percentDecimals: number;
 }
 
 function buildSnippet(config: SnippetConfig): string {
@@ -154,6 +199,9 @@ function buildSnippet(config: SnippetConfig): string {
 		`  animate={${config.animate}}`,
 		`  animationDurationMs={${config.animationDurationMs}}`,
 		`  showLegend={${config.showLegend}}`,
+		config.showLegend && config.percentDecimals > 0
+			? `  percentDecimals={${config.percentDecimals}}`
+			: null,
 		`  showTooltip={${config.showTooltip}}`,
 	].filter((line): line is string => line !== null);
 
@@ -187,12 +235,15 @@ export function App(): JSX.Element {
 
 	const [showLegend, setShowLegend] = useState(true);
 	const [showTooltip, setShowTooltip] = useState(true);
+	const [percentDecimals, setPercentDecimals] = useState(0);
 	const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 	const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 	const [eventMessage, setEventMessage] = useState<string | null>(null);
 
 	const tokens = THEMES[theme];
 	const isFullCircle = maxSweepDegrees === 360;
+	const prefersReducedMotion = usePrefersReducedMotion();
+	const effectiveAnimate = animate && !prefersReducedMotion;
 
 	const snippet = useMemo(
 		() =>
@@ -210,6 +261,7 @@ export function App(): JSX.Element {
 				animationDurationMs,
 				showLegend,
 				showTooltip,
+				percentDecimals,
 			}),
 		[
 			metrics,
@@ -225,6 +277,7 @@ export function App(): JSX.Element {
 			animationDurationMs,
 			showLegend,
 			showTooltip,
+			percentDecimals,
 		],
 	);
 
@@ -256,7 +309,10 @@ export function App(): JSX.Element {
 		return Math.round((sum / metrics.length) * 100);
 	}, [metrics]);
 
-	const animatedPercent = useCountUp(totalPercent, { durationMs: animationDurationMs, animate });
+	const animatedPercent = useCountUp(totalPercent, {
+		durationMs: animationDurationMs,
+		animate: effectiveAnimate,
+	});
 
 	const setValue = (index: number, value: number): void => {
 		setMetrics((current) =>
@@ -295,7 +351,9 @@ export function App(): JSX.Element {
 	};
 
 	const shuffle = (): void => {
-		setMetrics((current) => current.map((metric) => ({ ...metric, value: randomValue(metric.max) })));
+		setMetrics((current) =>
+			current.map((metric) => ({ ...metric, value: randomValue(metric.max) })),
+		);
 	};
 
 	const applyPreset = (preset: (typeof LAYOUT_PRESETS)[number]): void => {
@@ -313,14 +371,12 @@ export function App(): JSX.Element {
 			className={`min-h-screen transition-colors duration-300 motion-reduce:transition-none ${tokens.page}`}
 			style={pageStyle}
 		>
-			<div className="mx-auto max-w-5xl px-6 py-10 sm:py-16">
+			<div className="mx-auto max-w-5xl px-6 py-10 sm:py-16 2xl:max-w-7xl">
 				<header className="mb-12">
 					<div className="mb-10 flex items-center justify-between gap-4">
 						<div className="flex items-center gap-2.5">
 							<span className="h-3.5 w-3.5 bg-brand" aria-hidden="true" />
-							<span
-								className={`font-mono text-[11px] uppercase tracking-[0.18em] ${tokens.muted}`}
-							>
+							<span className={`font-mono text-[11px] uppercase tracking-[0.18em] ${tokens.muted}`}>
 								multi-layer-radial-chart
 							</span>
 						</div>
@@ -363,7 +419,9 @@ export function App(): JSX.Element {
 					</div>
 				</header>
 
-				<main className={`grid border ${tokens.frame} lg:grid-cols-[minmax(0,1fr)_360px]`}>
+				<main
+					className={`grid border ${tokens.frame} lg:grid-cols-[minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_720px]`}
+				>
 					<section className="relative flex min-h-[24rem] items-center justify-center overflow-hidden p-8">
 						<div
 							aria-hidden="true"
@@ -388,9 +446,10 @@ export function App(): JSX.Element {
 								maxSweepDegrees={maxSweepDegrees}
 								rounded={rounded}
 								clockwise={clockwise}
-								animate={animate}
+								animate={effectiveAnimate}
 								animationDurationMs={animationDurationMs}
 								showLegend={showLegend}
+								percentDecimals={percentDecimals}
 								showTooltip={showTooltip}
 								onSegmentClick={(datum, index) => {
 									setSelectedIndex(index);
@@ -429,11 +488,14 @@ export function App(): JSX.Element {
 						</div>
 					</section>
 
-					<aside className={`border-t lg:border-l lg:border-t-0 ${tokens.frame}`}>
+					<aside
+						className={`border-t lg:border-l lg:border-t-0 2xl:grid 2xl:grid-cols-2 2xl:content-start ${tokens.frame}`}
+					>
 						<Section index="01" title="Data" tokens={tokens} withDivider={false}>
 							<div className="mb-1 flex items-center justify-between gap-2">
 								<span className={`font-mono text-[10px] uppercase tracking-wider ${tokens.faint}`}>
-									Click a ring to select · <br/>hover to highlight
+									Click a ring to select · <br />
+									hover to highlight
 								</span>
 								<button
 									type="button"
@@ -525,7 +587,12 @@ export function App(): JSX.Element {
 							))}
 						</Section>
 
-						<Section index="02" title="Layout" tokens={tokens}>
+						<Section
+							index="02"
+							title="Layout"
+							tokens={tokens}
+							className={`2xl:border-t-0 2xl:border-l ${tokens.frame}`}
+						>
 							<div className="flex gap-2">
 								{LAYOUT_PRESETS.map((preset) => {
 									const active = preset.maxSweepDegrees === maxSweepDegrees;
@@ -612,8 +679,22 @@ export function App(): JSX.Element {
 							/>
 						</Section>
 
-						<Section index="04" title="Display" tokens={tokens}>
+						<Section
+							index="04"
+							title="Display"
+							tokens={tokens}
+							className={`2xl:border-l ${tokens.frame}`}
+						>
 							<Toggle label="Show legend" checked={showLegend} onChange={setShowLegend} />
+							<RangeControl
+								label="Legend decimals"
+								value={percentDecimals}
+								min={0}
+								max={4}
+								suffix="dp"
+								disabled={!showLegend}
+								onChange={setPercentDecimals}
+							/>
 							<Toggle label="Show tooltip" checked={showTooltip} onChange={setShowTooltip} />
 						</Section>
 					</aside>
@@ -668,9 +749,7 @@ function CodePanel(props: CodePanelProps): JSX.Element {
 	return (
 		<div className={`mt-6 border ${tokens.frame}`}>
 			<div className={`flex items-center justify-between border-b px-4 py-2.5 ${tokens.frame}`}>
-				<span
-					className={`font-mono text-[11px] uppercase tracking-[0.18em] ${tokens.faint}`}
-				>
+				<span className={`font-mono text-[11px] uppercase tracking-[0.18em] ${tokens.faint}`}>
 					App.tsx
 				</span>
 				<button
@@ -686,7 +765,9 @@ function CodePanel(props: CodePanelProps): JSX.Element {
 					{copied ? "Copied" : "Copy"}
 				</button>
 			</div>
-			<pre className={`overflow-x-auto p-4 font-mono text-[12px] leading-relaxed ${tokens.codeBg} ${tokens.codeText}`}>
+			<pre
+				className={`overflow-x-auto p-4 font-mono text-[12px] leading-relaxed ${tokens.codeBg} ${tokens.codeText}`}
+			>
 				<code>{code}</code>
 			</pre>
 		</div>
@@ -734,13 +815,16 @@ interface SectionProps {
 	readonly title: string;
 	readonly tokens: ThemeTokens;
 	readonly withDivider?: boolean;
+	readonly className?: string;
 	readonly children: ReactNode;
 }
 
 function Section(props: SectionProps): JSX.Element {
-	const { index, title, tokens, withDivider = true, children } = props;
+	const { index, title, tokens, withDivider = true, className = "", children } = props;
 	return (
-		<div className={`flex flex-col gap-3 p-6 ${withDivider ? `border-t ${tokens.frame}` : ""}`}>
+		<div
+			className={`flex flex-col gap-3 p-6 ${withDivider ? `border-t ${tokens.frame}` : ""} ${className}`}
+		>
 			<h3 className="flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.18em]">
 				<span className="text-brand">{index}</span>
 				<span className={tokens.faint}>/</span>
