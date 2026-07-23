@@ -1,6 +1,4 @@
-import { DEGREES_IN_HALF_CIRCLE, EASE_CUBIC_EXPONENT } from "../core/constants";
-
-const DECIMAL_BASE = 10;
+import { DEGREES_IN_HALF_CIRCLE, EASE_CUBIC_EXPONENT, MAX_FRACTION_DIGITS } from "../core/constants";
 
 /** Clamp `value` into the inclusive range `[min, max]`. */
 export function clamp(value: number, min: number, max: number): number {
@@ -29,11 +27,14 @@ export function easeOutCubic(ratio: number): number {
 	return 1 - inverted ** EASE_CUBIC_EXPONENT;
 }
 
-/** Round `value` to `decimals` decimal places, returning a finite number. */
+/**
+ * Round `value` to `decimals` decimal places, returning a clean finite number.
+ * Uses `toFixed` rather than `Math.round(value * 10 ** decimals) / …` so the
+ * result never carries a binary floating-point tail (e.g. `73.73000000000001`).
+ */
 export function roundTo(value: number, decimals: number): number {
 	if (!Number.isFinite(value)) {
 		return 0;
 	}
-	const factor = DECIMAL_BASE ** decimals;
-	return Math.round(value * factor) / factor;
+	return Number(value.toFixed(clamp(decimals, 0, MAX_FRACTION_DIGITS)));
 }

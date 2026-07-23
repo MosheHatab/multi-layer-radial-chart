@@ -82,6 +82,12 @@ export interface RadialChartProps {
 	maxSweepDegrees?: number;
 	/** Render the built-in legend below the chart. Default `false`. */
 	showLegend?: boolean;
+	/**
+	 * Decimal places for the percentage shown in the built-in legend.
+	 * Default `0` (whole numbers). Formatted with `toFixed`, so values like
+	 * `58.31%` render exactly rather than as `58.31000000000001%`.
+	 */
+	percentDecimals?: number;
 	/** Show a hover tooltip per ring. Default `false`. */
 	showTooltip?: boolean;
 	/**

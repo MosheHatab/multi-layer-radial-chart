@@ -5,6 +5,9 @@ export const DEGREES_IN_HALF_CIRCLE = 180;
 /** Percentage scale (fraction -> percent). */
 export const PERCENT_SCALE = 100;
 
+/** Maximum fraction digits accepted by `Number.prototype.toFixed`. */
+export const MAX_FRACTION_DIGITS = 100;
+
 /** Cubic easing exponent used by {@link easeOutCubic}. */
 export const EASE_CUBIC_EXPONENT = 3;
 

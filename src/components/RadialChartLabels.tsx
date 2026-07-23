@@ -1,11 +1,21 @@
 import type { CSSProperties, JSX } from "react";
 
-import { CSS_GRADIENT_ANGLE_OFFSET, DEFAULT_GRADIENT_ANGLE, PERCENT_SCALE } from "../core/constants";
+import {
+	CSS_GRADIENT_ANGLE_OFFSET,
+	DEFAULT_GRADIENT_ANGLE,
+	MAX_FRACTION_DIGITS,
+	PERCENT_SCALE,
+} from "../core/constants";
 import type { NormalizedDatum, RingGradient } from "../types";
+import { clamp } from "../utils/math";
+
+const DEFAULT_PERCENT_DECIMALS = 0;
 
 export interface RadialChartLabelsProps {
 	/** Normalized data to list in the legend. */
 	data: readonly NormalizedDatum[];
+	/** Decimal places for the displayed percentage. Default `0`. */
+	percentDecimals?: number;
 }
 
 /**
@@ -33,12 +43,15 @@ function swatchStyle(datum: NormalizedDatum): CSSProperties {
 }
 
 /**
- * Returns the percentage to display in the legend.
- * When the value exceeds max (overflow case) show the real ratio (e.g. 135%)
- * rather than the capped 100% so readers can see the actual progress.
+ * Formats the percentage to display in the legend, with a fixed number of
+ * decimal places. Uses `toFixed` (not arithmetic rounding) so the output never
+ * carries a binary floating-point tail such as `58.31000000000001`.
+ * When the value exceeds max (overflow case) the real ratio (e.g. `135%`) is
+ * shown rather than the capped 100% so readers can see the actual progress.
  */
-function displayPercent(datum: NormalizedDatum): number {
-	return datum.rawFraction > 1 ? Math.round(datum.rawFraction * PERCENT_SCALE) : datum.percent;
+function formatPercent(datum: NormalizedDatum, decimals: number): string {
+	const ratio = datum.rawFraction > 1 ? datum.rawFraction : datum.fraction;
+	return (ratio * PERCENT_SCALE).toFixed(clamp(decimals, 0, MAX_FRACTION_DIGITS));
 }
 
 /**
@@ -48,7 +61,7 @@ function displayPercent(datum: NormalizedDatum): number {
  * When a value exceeds its max the percentage shown is the real ratio (>100%).
  */
 export function RadialChartLabels(props: RadialChartLabelsProps): JSX.Element | null {
-	const { data } = props;
+	const { data, percentDecimals = DEFAULT_PERCENT_DECIMALS } = props;
 
 	if (data.length === 0) {
 		return null;
@@ -65,7 +78,7 @@ export function RadialChartLabels(props: RadialChartLabelsProps): JSX.Element | 
 					/>
 					<span className="rc-legend-label">{datum.label}</span>
 					<span className="rc-legend-value">
-						{datum.value}/{datum.max} ({displayPercent(datum)}%)
+						{datum.value}/{datum.max} ({formatPercent(datum, percentDecimals)}%)
 					</span>
 				</li>
 			))}

@@ -52,6 +52,7 @@ export function RadialChart(props: RadialChartProps): JSX.Element {
 		clockwise = true,
 		maxSweepDegrees = DEFAULT_MAX_SWEEP,
 		showLegend = false,
+		percentDecimals,
 		showTooltip = false,
 		onSegmentClick,
 		onSegmentHover,
@@ -148,7 +149,9 @@ export function RadialChart(props: RadialChartProps): JSX.Element {
 					<RadialTooltip datum={tooltip.datum} x={tooltip.x} y={tooltip.y} />
 				) : null}
 			</div>
-			{showLegend ? <RadialChartLabels data={normalized} /> : null}
+			{showLegend ? (
+				<RadialChartLabels data={normalized} percentDecimals={percentDecimals} />
+			) : null}
 		</div>
 	);
 }
