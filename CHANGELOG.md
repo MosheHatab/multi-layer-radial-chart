@@ -1,5 +1,11 @@
 # multi-layer-radial-chart
 
+## 1.0.1
+
+### Patch Changes
+
+- d273d11: Add `percentDecimals` prop for configurable legend percentage precision. Improve floating-point rounding in percent formatting.
+
 ## 1.0.0
 
 ### Major Changes
