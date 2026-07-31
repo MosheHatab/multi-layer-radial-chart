@@ -91,6 +91,7 @@ export function Dashboard() {
 | `clockwise`           | `boolean`                 | `true`         | Draw arcs clockwise.                                    |
 | `maxSweepDegrees`     | `number`                  | `360`          | Total sweep; `270` gauge, `180` semicircle.             |
 | `showLegend`          | `boolean`                 | `false`        | Render the built-in legend.                             |
+| `percentDecimals`     | `number`                  | `0`            | Decimal places for legend percentages.                  |
 | `showTooltip`         | `boolean`                 | `false`        | Show a hover tooltip per ring.                          |
 | `onSegmentClick`      | `(datum, index) => void`  | —              | Click/keyboard activate a ring (makes rings focusable). |
 | `onSegmentHover`      | `(datum, index) => void`  | —              | Fires on pointer enter/move over a ring.                |
