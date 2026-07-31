@@ -79,7 +79,7 @@
     "build-storybook": "storybook build",
     "changeset": "changeset",
     "version": "changeset version",
-    "release": "npm run build && changeset publish",
+    "release": "npm run build && node scripts/publish.mjs",
     "size": "size-limit",
     "check:package": "publint && attw --pack . --exclude-entrypoints styles.css --profile node16",
     "publish:safe": "npm run build && npm run check:package && npm publish",

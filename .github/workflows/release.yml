@@ -32,8 +32,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # setup-node writes an empty `_authToken` when NPM_TOKEN is unset, which
+      # blocks npm's OIDC trusted-publishing exchange. Clear it so OIDC works.
+      - name: Prefer OIDC when NPM_TOKEN is unset
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "$NODE_AUTH_TOKEN" ]; then
+            npm config delete "//registry.npmjs.org/:_authToken" || true
+            npm config delete always-auth || true
+            echo "No NPM_TOKEN — relying on OIDC trusted publishing"
+          fi
+
       # Opens/updates a "Version Packages" PR when changesets exist, and
-      # publishes to npm when that PR is merged (requires NPM_TOKEN).
+      # publishes to npm when that PR is merged (NPM_TOKEN or OIDC trusted publisher).
       - name: Create Release PR or publish
         uses: changesets/action@v1
         with:
