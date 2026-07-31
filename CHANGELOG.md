@@ -1,5 +1,11 @@
 # multi-layer-radial-chart
 
+## 1.0.2
+
+### Patch Changes
+
+- 03a8088: minor fixes + readme updates
+
 ## 1.0.1
 
 ### Patch Changes
